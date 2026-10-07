@@ -118,7 +118,8 @@
     var incassoVendite = 0, pezziVenduti = 0, pagamenti = 0, riscatti = 0;
     state.operations.forEach(function(op){
       if(op.tipo === "VENDITA"){ incassoVendite += Number(op.importo)||0; pezziVenduti += Number(op.quantita)||0; }
-      else if(op.tipo === "PAGAMENTO VINCITA"){ pagamenti += Number(op.importo)||0; }
+      else if(op.tipo === "RISCOSSIONE"){ pagamenti += Number(op.importo)||0; }
+      else if(op.tipo === "PAGAMENTO VINCITA" && !(op.schede && op.schede.length)){ pagamenti += Number(op.importo)||0; }
       else if(op.tipo === "RISCATTO VINCITA"){ riscatti += Number(op.importo)||0; }
     });
     var fondoVinciteAttuale = state.fondoIniziale - pagamenti + riscatti;
@@ -176,7 +177,9 @@
           "<button type='button' class='tile-sell-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">VENDI 1 BIGLIETTO</button>" +
         "</div>" +
         "<div class='tile-vincita-panel' hidden>" +
-          "<div class='payout-title'>RISCOSSIONE</div>" +
+          "<button type='button' class='tile-win-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">REGISTRA VINCITA · SCALA 1 BIGLIETTO</button>" +
+          "<div class='payout-divider'></div>" +
+          "<div class='payout-title'>RISCOSSIONE VINCITA</div>" +
           "<div class='payout-grid'>" +
             [5,10,20,30,40,50,60,70,80,90,100,200].map(function(v){
               return "<button type='button' class='payout-btn' data-nome='" + g.nome + "' data-importo='" + v + "'>" + v + "</button>";
@@ -251,9 +254,9 @@
     if(importo <= 0) return;
     state.operations.push({
       id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(),
-      tipo: "PAGAMENTO VINCITA", gioco: nome || "",
+      tipo: "RISCOSSIONE", gioco: nome || "",
       quantita: 0, importo: importo, importoVinto: importo,
-      schede: [], note: "Riscossione"
+      schede: [], note: "Riscossione vincita"
     });
     await saveOperations();
     renderRiepilogo();
@@ -268,9 +271,9 @@
     g.giacenza -= 1;
     var valore = g.prezzo;
     state.operations.push({
-      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "PAGAMENTO VINCITA", gioco: nome,
-      quantita: 0, importo: 0, importoVinto: valore,
-      schede: [{ gioco: nome, quantita: 1, prezzo: g.prezzo }], note: ""
+      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "VINCITA", gioco: nome,
+      quantita: 1, importo: 0, importoVinto: valore,
+      schede: [{ gioco: nome, quantita: 1, prezzo: g.prezzo }], note: "Biglietto vincente"
     });
     await saveGames();
     await saveOperations();
@@ -286,8 +289,8 @@
     var importo = Number(input.value) || 0;
     if(importo <= 0){ showToast("Inserisci un importo valido"); return; }
     state.operations.push({
-      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "PAGAMENTO VINCITA", gioco: "",
-      quantita: 0, importo: importo, importoVinto: importo, schede: [], note: ""
+      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "RISCOSSIONE", gioco: "",
+      quantita: 0, importo: importo, importoVinto: importo, schede: [], note: "Riscossione vincita"
     });
     await saveOperations();
     input.value = "";
@@ -315,7 +318,8 @@
       if(op.data !== date || getTurno(op.ora) !== turno) return;
       numOperazioni++;
       if(op.tipo === "VENDITA"){ incassoVendite += Number(op.importo)||0; pezzi += Number(op.quantita)||0; }
-      else if(op.tipo === "PAGAMENTO VINCITA"){ pagamenti += Number(op.importo)||0; }
+      else if(op.tipo === "RISCOSSIONE"){ pagamenti += Number(op.importo)||0; }
+      else if(op.tipo === "PAGAMENTO VINCITA" && !(op.schede && op.schede.length)){ pagamenti += Number(op.importo)||0; }
       else if(op.tipo === "RISCATTO VINCITA"){ riscatti += Number(op.importo)||0; }
     });
     return {
@@ -739,13 +743,14 @@
         "<td>" + g.nome + "</td>" +
         "<td><input class='mg-input' type='number' min='0' step='0.5' value='" + g.prezzo + "' data-idx='" + idx + "' data-field='prezzo' " + dis + "></td>" +
         "<td><input class='mg-input' type='number' min='0' step='1' value='" + g.giacenza + "' data-idx='" + idx + "' data-field='giacenza' " + dis + "></td>" +
-        "<td class='num-col'>" + fmtEUR(g.giacenza * g.prezzo) + " €</td>";
+        "<td class='num-col'>" + fmtEUR(g.giacenza * g.prezzo) + " €</td>" +
+        "<td style='width:80px;text-align:center;'><button type='button' class='mg-delete-game' data-nome='" + g.nome.replace(/'/g,"&#39;") + "' " + dis + ">Elimina</button></td>";
       mgBody.appendChild(tr);
     });
     var totRow = document.createElement('tr');
     totRow.style.fontWeight = "600";
     totRow.innerHTML =
-      "<td>Totale</td><td></td><td></td><td class='num-col'>" + fmtEUR(valoreMagazzinoAttuale) + " €</td>";
+      "<td>Totale</td><td></td><td></td><td class='num-col'>" + fmtEUR(valoreMagazzinoAttuale) + " €</td><td></td>";
     mgBody.appendChild(totRow);
 
     renderOpsList();
@@ -756,22 +761,21 @@
     var tagClass, tagLabel, desc, amountClass, sign, amountValue;
     if(op.tipo === "VENDITA"){
       tagClass = "vendita"; tagLabel = "Vendita";
-      desc = op.quantita + " pz \u00b7 " + op.gioco;
+      desc = op.quantita + " pz · " + op.gioco;
       amountClass = "pos"; sign = "+"; amountValue = op.importo;
+    } else if(op.tipo === "VINCITA" || (op.tipo === "PAGAMENTO VINCITA" && op.schede && op.schede.length)){
+      tagClass = "vincita-scheda"; tagLabel = "Vincita";
+      desc = (op.schede && op.schede.length)
+        ? op.schede.map(function(s){ return s.quantita + "× " + s.gioco; }).join(", ")
+        : (op.gioco || "Biglietto vincente");
+      amountClass = "neutral"; sign = "";
+      amountValue = 0;
     } else {
-      var hasSchede = op.schede && op.schede.length > 0;
-      var hasContanti = Number(op.importo) > 0;
-      if(hasSchede && !hasContanti){
-        tagClass = "vincita-scheda"; tagLabel = "Vincita (scheda)";
-        desc = op.schede.map(function(s){ return s.quantita + "× " + s.gioco; }).join(", ");
-        amountClass = "neutral"; sign = "\u2212"; amountValue = op.schede.reduce(function(sum,s){ return sum + s.quantita*s.prezzo; }, 0);
-      } else {
-        tagClass = "vincita-contanti"; tagLabel = "Vincita (contanti)";
-        desc = op.gioco ? ("gioco: " + op.gioco) : "";
-        amountClass = "neg"; sign = "\u2212"; amountValue = op.importo;
-      }
+      tagClass = "vincita-contanti"; tagLabel = "Riscossione";
+      desc = op.gioco ? ("gioco: " + op.gioco) : "";
+      amountClass = "neg"; sign = "−"; amountValue = op.importo;
     }
-    if(op.note) desc += (desc ? " \u2014 " : "") + op.note;
+    if(op.note) desc += (desc ? " — " : "") + op.note;
     return { tagClass: tagClass, tagLabel: tagLabel, desc: desc, amountClass: amountClass, sign: sign, amountValue: amountValue };
   }
 
@@ -842,7 +846,7 @@
       if(g) g.giacenza += Number(op.quantita) || 0; // restore stock if a sale is deleted
       await saveGames();
     }
-    if(op && op.tipo === "PAGAMENTO VINCITA" && op.schede && op.schede.length){
+    if(op && (op.tipo === "VINCITA" || op.tipo === "PAGAMENTO VINCITA") && op.schede && op.schede.length){
       op.schede.forEach(function(s){
         var gs = findGame(s.gioco);
         if(gs) gs.giacenza += Number(s.quantita) || 0; // le schede date in cambio tornano in magazzino
@@ -911,6 +915,8 @@
     }
     var sellBtn = e.target.closest('.tile-sell-btn');
     if(sellBtn && !sellBtn.disabled){ vendiUnaScheda(sellBtn.dataset.nome); return; }
+    var winBtn = e.target.closest('.tile-win-btn');
+    if(winBtn && !winBtn.disabled){ dannoSchedaVincita(winBtn.dataset.nome); return; }
     var payoutBtn = e.target.closest('.payout-btn');
     if(payoutBtn){ registraRiscossione(payoutBtn.dataset.nome, payoutBtn.dataset.importo); return; }
     var otherBtn = e.target.closest('.other-payout-btn');
@@ -958,6 +964,24 @@
     renderTiles();
     renderRiepilogo();
     showToast('Nuovo Gratta e Vinci aggiunto');
+  }
+
+  async function removeGame(nome){
+    if(locked){ showToast('Sblocca la configurazione per eliminare un Gratta e Vinci'); return; }
+    var g = findGame(nome);
+    if(!g) return;
+    var hasOps = state.operations.some(function(op){
+      return op.gioco === nome || (op.schede && op.schede.some(function(s){ return s.gioco === nome; }));
+    });
+    var msg = 'Eliminare definitivamente "' + nome + '" dalla configurazione?';
+    if(hasOps) msg += '\n\nLo storico delle operazioni resterà salvato, ma il Gratta e Vinci non sarà più disponibile nel magazzino.';
+    if(!window.confirm(msg)) return;
+    state.games = state.games.filter(function(x){ return x.nome !== nome; });
+    await saveGames();
+    renderTiles();
+    renderRiepilogo();
+    scheduleSbAutoSync();
+    showToast('Gratta e Vinci eliminato dalla configurazione');
   }
 
   async function setGameImage(nome, dataUrlOrNull){
@@ -1011,6 +1035,11 @@
       renderRiepilogo();
       showToast("Valore ordine magazzino aggiornato");
     }
+  });
+
+  document.getElementById('magazzinoBody').addEventListener('click', function(e){
+    var btn = e.target.closest('.mg-delete-game');
+    if(btn) removeGame(btn.getAttribute('data-nome'));
   });
 
   document.getElementById('magazzinoBody').addEventListener('change', async function(e){
