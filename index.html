@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-
 <html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Gestionale Gratta e Vinci</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F2F3F0;
@@ -136,130 +135,128 @@
   .op-tag.vincita-scheda{ background:#FBF1D8; color:#8A6C0F; }
   .op-tag.vincita-contanti{ background:#F7E7E1; color:var(--red); }
 
-  /* ---------- Schede Gratta e Vinci: nuova interfaccia ---------- */
-  .tile-actions{display:none;}
-
-  .tiles-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 12px;flex-wrap:wrap;}
-  .tiles-toolbar-title{font-size:12px;color:var(--ink-soft);font-weight:600;}
-  .tiles-toolbar-actions{display:flex;align-items:center;gap:8px;}
-  .game-sort{height:36px;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--ink);padding:0 10px;font-family:inherit;font-weight:600;font-size:12px;cursor:pointer;}
-  .add-game-btn{width:38px;height:36px;border:0;border-radius:7px;background:var(--teal);color:#fff;font-size:25px;line-height:1;font-weight:500;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.12);}
-  .add-game-btn:hover{background:var(--teal-dark);}
-
+  /* ---------- Vendita: POS layout ---------- */
+  .pos-layout{
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+  }
+  .tiles-panel{ flex:1; min-width:0; }
   .tiles-grid{
     display:grid;
-    grid-template-columns:repeat(3,minmax(230px,1fr));
-    gap:18px;
+    grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));
+    gap:16px;
   }
   .tile{
-    background:#fff;
-    border:1px solid #BFC4BD;
-    border-radius:0;
-    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--panel);
+    cursor:pointer;
     position:relative;
-    box-shadow:0 2px 8px rgba(0,0,0,.07);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    transition:transform .06s, box-shadow .12s;
   }
-  .tile:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);}
-  .ticket-price{
-    position:absolute;
-    top:0;right:0;z-index:3;
-    min-width:58px;
-    padding:4px 8px;
-    border-left:1px solid #222;
-    border-bottom:1px solid #222;
-    background:#fff;
-    color:#174F1C;
+  .tile:hover{ box-shadow:0 5px 16px rgba(0,0,0,0.14); }
+  .tile:active{ transform:scale(0.98); }
+
+  .tile-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 10px 0;
+    gap:6px;
+  }
+  .tile-top-icons{ display:flex; gap:5px; }
+  .price-chip{
     font-family:'IBM Plex Mono',monospace;
-    font-weight:800;
-    font-size:17px;
-    text-align:center;
+    font-size:14px;
+    font-weight:700;
+    background:var(--ink);
+    color:#F4F1E8;
+    padding:4px 10px;
+    border-radius:20px;
+    white-space:nowrap;
   }
-  .tile-image-wrap{
-    height:290px;
-    margin:0;
-    padding:30px 18px 8px;
-    background:#F5F5F3;
-    border-radius:0;
+  .tile-imgedit, .tile-imgremove{
+    width:26px; height:26px;
+    border-radius:7px;
+    border:1px solid var(--border);
+    background:var(--paper);
+    color:var(--ink-soft);
+    font-size:12px;
     display:flex;
     align-items:center;
     justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .tile-imgremove{ color:var(--red); }
+  .tile-imgedit:hover{ background:#fff; color:var(--ink); }
+  .tile-imgremove:hover{ background:#FCE9E3; }
+
+  .tile-image-wrap{
+    flex:1;
+    min-height:150px;
+    background:#F1F2EE;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px;
     position:relative;
+    margin:8px 10px 0;
+    border-radius:8px;
   }
-  .tile-image-wrap img{max-width:100%;max-height:265px;object-fit:contain;display:block;}
-  .tile-placeholder{font-size:44px;opacity:.35;}
-  .tile-soldout-veil{position:absolute;inset:0;background:rgba(255,255,255,.72);display:flex;align-items:center;justify-content:center;}
-  .tile-soldout-veil span{background:#B3432B;color:#fff;padding:7px 16px;border-radius:4px;font-weight:800;letter-spacing:.06em;}
-  .tile-product-name{
-    min-height:31px;
-    display:flex;align-items:center;justify-content:center;
-    padding:5px 8px;
-    border-top:1px solid #222;
-    border-bottom:1px solid #222;
-    color:#174F1C;
-    font-size:16px;
-    font-weight:800;
-    text-transform:uppercase;
-    text-align:center;
+  .tile-image-wrap img{
+    max-width:100%;
+    max-height:170px;
+    object-fit:contain;
+    display:block;
   }
-  .tile-stock-line{
-    text-align:center;
-    padding:5px 8px 4px;
+  .tile-placeholder{
+    font-size:34px;
+    opacity:0.35;
+  }
+  .tile-soldout-veil{
+    position:absolute; inset:0;
+    background:rgba(255,255,255,0.72);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+  }
+  .tile-soldout-veil span{
+    background:var(--red);
+    color:#fff;
     font-size:11px;
-    color:#59605B;
-    letter-spacing:.03em;
+    font-weight:700;
+    letter-spacing:0.04em;
+    padding:5px 12px;
+    border-radius:20px;
+    transform:rotate(-6deg);
   }
-  .tile-stock-line strong{font-family:'IBM Plex Mono',monospace;color:#1C2321;font-size:12px;}
-  .tile-tabs{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #222;}
-  .tile-mode-btn{
-    border:0;border-right:1px solid #222;background:#fff;color:#174F1C;
-    padding:8px 4px;font-weight:900;font-size:16px;cursor:pointer;
+
+  .tile-footer{
+    padding:10px 12px 12px;
+    color:#fff;
   }
-  .tile-mode-btn:last-child{border-right:0;}
-  .tile-mode-btn.active{background:#174F1C;color:#fff;}
-  .tile-vendita-panel{padding:8px 9px 10px;}
-  .tile-sell-btn{
-    width:100%;border:0;border-radius:5px;background:#174F1C;color:#fff;
-    padding:10px 8px;font-size:14px;font-weight:900;cursor:pointer;
+  .tile-footer .tile-name{
+    font-size:14.5px;
+    font-weight:700;
+    line-height:1.25;
   }
-  .tile-sell-btn:hover{background:#0F3D13;}
-  .tile-sell-btn:disabled{background:#BFC4BD;color:#747A75;cursor:not-allowed;}
-  .tile-vincita-panel{padding:7px 9px 10px;background:#fff;}
-  .tile-win-btn{width:100%;border:0;border-radius:5px;background:#8A6C0F;color:#fff;padding:9px 7px;font-size:12px;font-weight:900;cursor:pointer;}
-  .tile-win-btn:hover{background:#6E560C;}
-  .tile-win-btn:disabled{background:#BFC4BD;color:#747A75;cursor:not-allowed;}
-  .payout-divider{height:1px;background:#DDE1DA;margin:9px 0 8px;}
-  .mg-delete-game{border:1px solid #D7B0A7;background:#FFF7F4;color:#B3432B;border-radius:5px;padding:5px 7px;font-size:11px;font-weight:700;cursor:pointer;}
-  .mg-delete-game:hover{background:#F7E7E1;}
-  .mg-delete-game:disabled{opacity:.45;cursor:not-allowed;}
-  .tile-vincita-panel[hidden]{display:none;}
-  .payout-title{text-align:center;color:#174F1C;font-size:13px;font-weight:900;margin:0 0 6px;}
-  .payout-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
-  .payout-btn{
-    border:0;border-radius:5px;background:#050505;color:#fff;
-    padding:5px 2px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:800;cursor:pointer;
+  .tile-footer .tile-stock{
+    font-size:11.5px;
+    font-family:'IBM Plex Mono',monospace;
+    opacity:0.85;
+    margin-top:3px;
   }
-  .payout-btn:hover{background:#174F1C;}
-  .other-payout-btn{
-    width:100%;margin-top:7px;border:1px solid #D8DCD6;border-radius:5px;
-    background:#F4EDED;color:#174F1C;padding:7px;font-size:11px;font-weight:900;cursor:pointer;
-  }
-  .tile-admin{display:flex;justify-content:flex-end;gap:4px;padding:0 7px 7px;}
-  .tile-imgedit,.tile-imgremove{width:25px;height:25px;border-radius:5px;border:1px solid var(--border);background:#fff;color:var(--ink-soft);font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .tile-imgremove{color:var(--red);}
-  .tile.exhausted .tile-product-name{color:#777;}
-  .tile.exhausted .tile-tabs{opacity:.6;}
-  @media(max-width:1150px){.tiles-grid{grid-template-columns:repeat(2,minmax(220px,1fr));}}
-  @media(max-width:760px){
-    .content{padding:12px;}
-    .cassa-main{display:block;}
-    .cassa-side{width:auto;position:static;margin-top:14px;}
-    .tiles-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-    .tile-image-wrap{height:220px;padding:26px 8px 5px;}
-    .tile-image-wrap img{max-height:205px;}
-    .tile-product-name{font-size:13px;}
-    .tile-mode-btn{font-size:13px;}
-  }
-  @media(max-width:480px){.tiles-grid{grid-template-columns:1fr;}}
+  .tile.exhausted .tile-footer{ opacity:0.55; }
+  .tile.exhausted{ cursor:not-allowed; }
+
+
   .cart-list{ list-style:none; margin:0 0 12px; padding:0; max-height:220px; overflow-y:auto; }
   .cart-list li{
     display:flex;
@@ -411,290 +408,224 @@
     .stat-row{ grid-template-columns:1fr; }
   }
   @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
-
-
-  /* ===== VELORA-INSPIRED PREMIUM UI — visual layer only ===== */
-  :root{
-    --paper:#F3F1EC;
-    --panel:#FBFAF7;
-    --ink:#11110F;
-    --ink-soft:#716F69;
-    --teal:#1F513C;
-    --teal-dark:#153A2B;
-    --gold:#A8842C;
-    --red:#A94332;
-    --border:#D8D4CB;
-    --sidebar-w:220px;
-  }
-  body{background:var(--paper);letter-spacing:-.01em;}
-  .sidebar{
-    background:#11110F;color:#F7F5EF;padding:30px 18px 22px;
-    border-right:1px solid rgba(255,255,255,.08);
-  }
-  .sidebar .brand{font-size:18px;line-height:1.05;letter-spacing:-.04em;margin:2px 8px 34px;font-weight:600;}
-  .nav-label{font-size:9px;letter-spacing:.14em;color:#77756F;margin:18px 10px 8px;}
-  .nav-btn{border-radius:999px;padding:11px 14px;font-size:13px;transition:.18s ease;}
-  .nav-btn.active{background:#F5F2EA;color:#11110F;font-weight:700;}
-  .nav-btn:hover{background:rgba(255,255,255,.08);}
-
-  .content{padding:38px 42px 60px;max-width:1680px;margin:0 auto;width:100%;}
-  h1.page-title{font-size:46px;line-height:.98;letter-spacing:-.055em;font-weight:500;margin:0 0 28px;}
-  .subtabs{gap:8px;margin-bottom:26px;}
-  .subtab-btn{border-radius:999px;padding:9px 16px;background:transparent;border-color:#CBC7BE;font-size:12px;}
-  .subtab-btn.active{background:#11110F;border-color:#11110F;}
-
-  .till{background:#11110F;border-radius:22px;padding:28px 30px;margin-bottom:16px;box-shadow:0 14px 40px rgba(17,17,15,.10);}
-  .till .label{text-transform:uppercase;letter-spacing:.12em;font-size:9px;color:#9C9A93;}
-  .till .amount{font-size:48px;letter-spacing:-.055em;font-weight:500;}
-  .stat-row{gap:12px;margin-bottom:22px;}
-  .stat{border-color:var(--border);border-radius:16px;padding:17px 18px;background:rgba(251,250,247,.92);}
-  .stat .label{text-transform:uppercase;letter-spacing:.08em;font-size:9px;}
-  .stat .value,.stat .edit-fondo{font-size:22px;letter-spacing:-.035em;}
-
-  .cassa-main{gap:22px;margin-top:22px;}
-  .cassa-side{width:330px;gap:16px;top:28px;}
-  .panel,.form-panel{border-radius:18px;border-color:var(--border);background:rgba(251,250,247,.94);box-shadow:none;}
-  .panel{padding:19px 19px 9px;}
-  .panel h2{font-size:13px;letter-spacing:-.02em;}
-
-  .tiles-toolbar{margin:0 0 18px;padding:0 2px;}
-  .tiles-toolbar-title{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:#77736B;}
-  .game-sort{height:42px;border-radius:999px;background:#FBFAF7;border-color:#D0CCC3;padding:0 16px;font-size:11px;}
-  .add-game-btn{width:42px;height:42px;border-radius:50%;background:#11110F;box-shadow:none;font-size:22px;transition:.18s ease;}
-  .add-game-btn:hover{background:#1F513C;transform:scale(1.04);}
-
-  .tiles-grid{grid-template-columns:repeat(3,minmax(250px,1fr));gap:22px;}
-  .tile{border:1px solid var(--border);border-radius:18px;background:#FBFAF7;box-shadow:none;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;}
-  .tile:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(24,23,20,.08);border-color:#C8C3B9;}
-  .ticket-price{top:14px;right:14px;min-width:auto;padding:7px 11px;border:0;border-radius:999px;background:rgba(251,250,247,.92);backdrop-filter:blur(8px);color:#11110F;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
-  .tile-image-wrap{height:300px;margin:8px 8px 0;padding:38px 20px 14px;border-radius:13px;background:#EAE7E0;overflow:hidden;}
-  .tile-image-wrap img{max-height:260px;filter:drop-shadow(0 12px 16px rgba(0,0,0,.12));transition:transform .22s ease;}
-  .tile:hover .tile-image-wrap img{transform:scale(1.018);}
-  .tile-product-name{justify-content:flex-start;min-height:auto;padding:18px 18px 5px;border:0;color:#11110F;font-size:19px;line-height:1.05;letter-spacing:-.035em;text-transform:none;text-align:left;}
-  .tile-stock-line{text-align:left;padding:0 18px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#858178;}
-  .tile-stock-line strong{font-size:11px;color:#11110F;}
-  .tile-tabs{margin:0 14px;border:1px solid #D5D1C8;border-radius:999px;overflow:hidden;background:#F1EFE9;}
-  .tile-mode-btn{border:0!important;padding:10px 6px;background:transparent;color:#4F4D47;font-size:11px;letter-spacing:.05em;text-transform:uppercase;}
-  .tile-mode-btn.active{background:#11110F;color:#fff;border-radius:999px;}
-  .tile-vendita-panel,.tile-vincita-panel{padding:12px 14px 14px;background:transparent;}
-  .tile-sell-btn,.tile-win-btn{border-radius:999px;padding:12px 10px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;background:#1F513C;}
-  .tile-win-btn{background:#9A7924;}
-  .payout-divider{background:#DDD9D0;margin:13px 0 11px;}
-  .payout-title{text-align:left;color:#11110F;font-size:10px;letter-spacing:.10em;text-transform:uppercase;margin-bottom:8px;}
-  .payout-grid{gap:5px;}
-  .payout-btn{border-radius:999px;background:#11110F;padding:7px 2px;font-size:10px;}
-  .other-payout-btn{border-radius:999px;background:#ECE9E2;border:0;color:#11110F;padding:9px;}
-  .tile-admin{padding:0 14px 14px;}
-  .tile-imgedit,.tile-imgremove{border-radius:50%;width:29px;height:29px;background:transparent;}
-
-  .btn{border-radius:999px;padding:12px 15px;}
-  .btn.primary{background:#11110F;}.btn.primary:hover{background:#1F513C;}
-  input.mg-input{border-radius:10px;background:#FBFAF7;}
-  table.mg th{text-transform:uppercase;letter-spacing:.08em;font-size:9px;}
-  .op-tag{border-radius:999px;padding:4px 8px;}
-  .toast{border-radius:999px;background:#11110F;padding:11px 20px;}
-
-  @media(max-width:1280px){.tiles-grid{grid-template-columns:repeat(2,minmax(250px,1fr));}}
-  @media(max-width:860px){
-    .content{padding:24px 16px 42px;}
-    h1.page-title{font-size:36px;margin-bottom:20px;}
-    .sidebar{padding:10px 12px;background:#11110F;}
-    .nav-btn.active{background:#F5F2EA;color:#11110F;}
-    .tiles-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
-    .tile-image-wrap{height:230px;margin:6px 6px 0;}
-    .tile-image-wrap img{max-height:200px;}
-    .tile-product-name{font-size:16px;padding:14px 14px 4px;}
-    .tile-stock-line{padding:0 14px 12px;}
-    .tile-tabs{margin:0 10px;}
-    .tile-vendita-panel,.tile-vincita-panel{padding:10px;}
-  }
-  @media(max-width:540px){.tiles-grid{grid-template-columns:1fr;}.till .amount{font-size:40px;}}
-
-
-.page-title{letter-spacing:-.05em;font-weight:650}
-.till,.panel,.stat{box-shadow:none}
-.btn,.nav-btn,.add-game-btn{transition:background-color .15s ease,transform .15s ease}
-.btn:active,.add-game-btn:active{transform:translateY(1px)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #526b5d;outline-offset:3px}
-.cassa-side .register-panel{position:sticky;top:20px}
-@media(max-width:1050px){.cassa-side .register-panel{position:static}}
 </style>
 </head>
 <body>
-<div class="app">
-<nav class="sidebar">
-<div class="brand">Gestionale<br/>Gratta e Vinci</div>
-<div class="nav-label">Attività</div>
-<button class="nav-btn active" data-view="cassa">Cassa</button>
-<div class="nav-label">Gestione</div>
-<button class="nav-btn" data-view="magazzino">Magazzino</button>
-<button class="nav-btn" data-view="configurazione">Configurazione</button>
-</nav>
-<main class="content">
-<section class="view active" id="view-cassa">
-<h1 class="page-title">Cassa</h1>
-<div class="till">
-<div class="label">Saldo cassa totale (solo contanti — non include il magazzino)</div>
-<div class="amount" id="saldoTotale">—</div>
-</div>
-<div class="stat-row">
-<div class="stat" id="statFondo">
-<div class="label">Fondo vincite attuale</div>
-<div class="value num" id="fondoVinciteAttuale">—</div>
-<div class="sub">Iniziale: <span class="num" id="fondoInizialeDisplay">—</span> €</div>
-</div>
-<div class="stat">
-<div class="label">Incasso vendite</div>
-<div class="value num" id="incassoVendite">—</div>
-<div class="sub" id="pezziVendutiSub">—</div>
-</div>
-<div class="stat stat-magazzino">
-<div class="label">Valore magazzino attuale</div>
-<div class="value num" id="valoreMagazzinoAttuale">—</div>
-<div class="sub">Ordine iniziale: <span class="num" id="valoreMagazzinoInizialeDisplay">—</span> €</div>
-<div class="tag-non-cassa">Non è cassa — è merce</div>
-</div>
-<div class="stat">
-<div class="value num" id="cassaNetta">—</div>
-<div class="label">Cassa netta</div>
-<div class="sub">Vendite − pagamenti vincite</div>
-</div>
-</div>
-<div class="cassa-main">
-<div class="cassa-tiles">
-<div class="tiles-toolbar">
-<div class="tiles-toolbar-title">Gratta e Vinci disponibili</div>
-<div class="tiles-toolbar-actions">
-<select class="game-sort" id="gameSortSelect" title="Ordine dei Gratta e Vinci">
-<option value="price_desc">Prezzo: più grande → più piccolo</option>
-<option value="price_asc">Prezzo: più piccolo → più grande</option>
-<option value="custom">Ordine inserimento</option>
-</select>
-<button class="add-game-btn" id="addGameBtn" title="Aggiungi nuovo Gratta e Vinci" type="button">+</button>
-</div>
-</div>
-<div class="tiles-grid" id="tilesGrid"></div>
-<input accept="image/*" id="tileImageInput" style="display:none;" type="file"/>
-</div>
-<div class="cassa-side">
 
-<div class="panel register-panel">
-<h2>Registro operazioni</h2>
-<ul class="ops-list" id="opsList"></ul>
-</div>
-</div>
-</div>
-<div class="panel">
-<h2>
+<div class="app">
+  <nav class="sidebar">
+    <div class="brand">Gestionale<br>Gratta e Vinci</div>
+    <div class="nav-label">Attività</div>
+    <button class="nav-btn active" data-view="cassa">Cassa</button>
+    <div class="nav-label">Gestione</div>
+    <button class="nav-btn" data-view="magazzino">Magazzino</button>
+    <button class="nav-btn" data-view="configurazione">Configurazione</button>
+  </nav>
+
+  <main class="content">
+
+    <section class="view active" id="view-cassa">
+      <h1 class="page-title">Cassa</h1>
+
+      <div class="till">
+        <div class="label">Saldo cassa totale (solo contanti — non include il magazzino)</div>
+        <div class="amount" id="saldoTotale">—</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat" id="statFondo">
+          <div class="label">Fondo vincite attuale</div>
+          <div class="value num" id="fondoVinciteAttuale">—</div>
+          <div class="sub">Iniziale: <span class="num" id="fondoInizialeDisplay">—</span> €</div>
+        </div>
+        <div class="stat">
+          <div class="label">Incasso vendite</div>
+          <div class="value num" id="incassoVendite">—</div>
+          <div class="sub" id="pezziVendutiSub">—</div>
+        </div>
+        <div class="stat stat-magazzino">
+          <div class="label">Valore magazzino attuale</div>
+          <div class="value num" id="valoreMagazzinoAttuale">—</div>
+          <div class="sub">Ordine iniziale: <span class="num" id="valoreMagazzinoInizialeDisplay">—</span> €</div>
+          <div class="tag-non-cassa">Non è cassa — è merce</div>
+        </div>
+        <div class="stat">
+          <div class="value num" id="cassaNetta">—</div>
+          <div class="label">Cassa netta</div>
+          <div class="sub">Vendite − pagamenti vincite</div>
+        </div>
+      </div>
+
+      <div class="cassa-main">
+        <div class="cassa-tiles">
+          <div class="tiles-grid" id="tilesGrid"></div>
+          <input type="file" id="tileImageInput" accept="image/*" style="display:none;">
+        </div>
+
+        <div class="cassa-side">
+          <div class="panel quick-pay-panel">
+            <h2>Contanti vincita</h2>
+            <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 8px;">Per una vincita pagata solo (o anche) in contanti, senza dare schede.</p>
+            <div style="display:flex;gap:6px;">
+              <input type="number" id="quickContantiInput" min="0" step="0.01" placeholder="Importo €" style="flex:1;">
+              <button type="button" class="btn primary" id="quickContantiBtn" style="flex-shrink:0;">Paga</button>
+            </div>
+          </div>
+
+          <div class="panel register-panel">
+            <h2>Registro operazioni</h2>
+            <ul class="ops-list" id="opsList"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>
           Storico giornaliero
           <button class="btn secondary" id="chiudiGiornataBtn" style="float:right;padding:5px 12px;font-size:12px;margin-top:-4px;">Chiudi giornata adesso</button>
-</h2>
-<table class="mg">
-<thead><tr><th>Giorno</th><th>Pezzi</th><th>Incasso</th><th>Pagamenti vincite</th><th>Cassa netta</th></tr></thead>
-<tbody id="storicoBody"></tbody>
-</table>
-<button class="btn secondary" id="exportExcelBtn" style="width:100%;">Scarica Excel (.xlsx)</button>
-</div>
-<div class="panel">
-<h2>Tutte le operazioni</h2>
-<table class="mg">
-<thead><tr><th>Data</th><th>Tipo</th><th>Dettaglio</th><th>Importo</th><th></th></tr></thead>
-<tbody id="operazioniCompleteBody"></tbody>
-</table>
-</div>
-</section>
-<section class="view" id="view-magazzino">
-<h1 class="page-title">Magazzino</h1>
-<div class="panel">
-<h2>Magazzino <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">— modifica prezzo o giacenza, si aggiorna subito. I nuovi Gratta e Vinci si aggiungono con il pulsante + nella Cassa.</span></h2>
-<table class="mg">
-<thead><tr><th>Gioco</th><th style="width:110px;">Prezzo (€)</th><th style="width:110px;">Giacenza</th><th>Valore giacenza</th><th style="width:80px;">Azioni</th></tr></thead>
-<tbody id="magazzinoBody"></tbody>
-</table>
-</div>
-</section>
-<section class="view" id="view-configurazione">
-<h1 class="page-title">Configurazione</h1>
-<div class="panel" id="lockPanel">
-<h2>Blocco configurazione</h2>
-<div id="lockStatusUnlocked">
-<p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">
+        </h2>
+        <table class="mg">
+          <thead><tr><th>Giorno</th><th>Pezzi</th><th>Incasso</th><th>Pagamenti vincite</th><th>Cassa netta</th></tr></thead>
+          <tbody id="storicoBody"></tbody>
+        </table>
+        <button class="btn secondary" id="exportExcelBtn" style="width:100%;">Scarica Excel (.xlsx)</button>
+      </div>
+
+      <div class="panel">
+        <h2>Tutte le operazioni</h2>
+        <table class="mg">
+          <thead><tr><th>Data</th><th>Tipo</th><th>Dettaglio</th><th>Importo</th><th></th></tr></thead>
+          <tbody id="operazioniCompleteBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-magazzino">
+      <h1 class="page-title">Magazzino</h1>
+      <div class="panel">
+        <h2>Magazzino <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">— modifica prezzo o giacenza, si aggiorna subito</span></h2>
+        <table class="mg">
+          <thead><tr><th>Gioco</th><th style="width:110px;">Prezzo (€)</th><th style="width:110px;">Giacenza</th><th>Valore giacenza</th></tr></thead>
+          <tbody id="magazzinoBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-configurazione">
+      <h1 class="page-title">Configurazione</h1>
+
+      <div class="panel" id="lockPanel">
+        <h2>Blocco configurazione</h2>
+        <div id="lockStatusUnlocked">
+          <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">
             Una volta impostato tutto (fondo, valore magazzino, prezzi), blocca la configurazione con un PIN per evitare modifiche accidentali. Vendite, vincite e chiusura giornata restano sempre disponibili.
           </p>
-<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-<div class="field" style="max-width:160px;margin-bottom:0;">
-<label for="setPinInput">Imposta un PIN (4 cifre)</label>
-<input id="setPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •" type="password"/>
-</div>
-<button class="btn primary" id="lockBtn" style="margin-bottom:0;" type="button">Blocca configurazione</button>
-</div>
-</div>
-<div id="lockStatusLocked" style="display:none;">
-<p style="font-size:13px;margin:0 0 10px;">🔒 Configurazione bloccata. Prezzi, giacenze e fondi non sono modificabili.</p>
-<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-<div class="field" style="max-width:160px;margin-bottom:0;">
-<label for="unlockPinInput">PIN per sbloccare</label>
-<input id="unlockPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •" type="password"/>
-</div>
-<button class="btn secondary" id="unlockBtn" style="margin-bottom:0;" type="button">Sblocca</button>
-</div>
-</div>
-</div>
-<div class="panel">
-<h2>Configurazione fondo cassa</h2>
-<div class="field" style="max-width:260px;">
-<label for="fondoIniziale2">Fondo vincite iniziale (€)</label>
-<input id="fondoIniziale2" min="0" step="1" type="number"/>
-</div>
-<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 14px;">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div class="field" style="max-width:160px;margin-bottom:0;">
+              <label for="setPinInput">Imposta un PIN (4 cifre)</label>
+              <input type="password" id="setPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •">
+            </div>
+            <button type="button" class="btn primary" id="lockBtn" style="margin-bottom:0;">Blocca configurazione</button>
+          </div>
+        </div>
+        <div id="lockStatusLocked" style="display:none;">
+          <p style="font-size:13px;margin:0 0 10px;">🔒 Configurazione bloccata. Prezzi, giacenze e fondi non sono modificabili.</p>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div class="field" style="max-width:160px;margin-bottom:0;">
+              <label for="unlockPinInput">PIN per sbloccare</label>
+              <input type="password" id="unlockPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •">
+            </div>
+            <button type="button" class="btn secondary" id="unlockBtn" style="margin-bottom:0;">Sblocca</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Configurazione fondo cassa</h2>
+        <div class="field" style="max-width:260px;">
+          <label for="fondoIniziale2">Fondo vincite iniziale (€)</label>
+          <input type="number" id="fondoIniziale2" min="0" step="1">
+        </div>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 14px;">
           Il denaro che tieni in cassa per pagare le vincite ai clienti. Cambialo quando reintegri il fondo o cambi importo di partenza — si aggiorna subito ovunque.
         </p>
-<div class="field" style="max-width:260px;">
-<label for="valoreMagazzinoIniziale2">Valore ordine magazzino (€)</label>
-<input id="valoreMagazzinoIniziale2" min="0" step="1" type="number"/>
-</div>
-<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
+        <div class="field" style="max-width:260px;">
+          <label for="valoreMagazzinoIniziale2">Valore ordine magazzino (€)</label>
+          <input type="number" id="valoreMagazzinoIniziale2" min="0" step="1">
+        </div>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
           Il costo dell'ordine di gratta e vinci ricevuto dal distributore. È un valore di merce, separato dalla cassa: aggiornalo quando arriva un nuovo ordine.
         </p>
-</div>
-<div class="panel">
-<h2>Backup dati (file locale)</h2>
-<div style="display:flex;gap:8px;margin-bottom:10px;">
-<button class="btn secondary" id="exportBtn" style="flex:1;">Esporta backup (.json)</button>
-<button class="btn secondary" id="importBtn" style="flex:1;">Importa backup (.json)</button>
-</div>
-<input accept="application/json" id="importFileInput" style="display:none;" type="file"/>
-<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
+      </div>
+
+      <div class="panel">
+        <h2>Backup dati (file locale)</h2>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="btn secondary" id="exportBtn" style="flex:1;">Esporta backup (.json)</button>
+          <button class="btn secondary" id="importBtn" style="flex:1;">Importa backup (.json)</button>
+        </div>
+        <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
           I dati restano salvati in questo browser. Esporta un backup di tanto in tanto, e usa "Importa" per ripristinarlo su questo o un altro dispositivo.
         </p>
-</div>
+      </div>
 
-<div class="panel" id="sbPanel">
-<h2>Sincronizzazione con Supabase</h2>
-<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
+      <div class="panel" id="ghPanel">
+        <h2>Salvataggio su GitHub</h2>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
+          Salva una copia di tutti i dati in un repository GitHub, al sicuro anche se perdi questo dispositivo. Ti serve un repository (anche privato) e un token di accesso personale con permesso di scrittura su quel repository.
+        </p>
+        <div class="field">
+          <label for="ghRepo">Repository (utente/nome-repo)</label>
+          <input type="text" id="ghRepo" placeholder="mariorossi/backup-gratta-vinci">
+        </div>
+        <div class="field">
+          <label for="ghPath">Percorso del file nel repository</label>
+          <input type="text" id="ghPath" placeholder="backup/gestionale.json">
+        </div>
+        <div class="field">
+          <label for="ghToken">Token di accesso personale GitHub</label>
+          <input type="password" id="ghToken" placeholder="ghp_...">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button type="button" class="btn secondary" id="ghSaveConfigBtn">Salva impostazioni</button>
+          <button type="button" class="btn primary" id="ghPushBtn">Salva su GitHub adesso</button>
+          <button type="button" class="btn secondary" id="ghPullBtn">Carica da GitHub</button>
+        </div>
+        <p id="ghLastSync" style="font-size:11.5px;color:var(--ink-soft);margin:0;"></p>
+      </div>
+
+      <div class="panel" id="sbPanel">
+        <h2>Sincronizzazione con Supabase</h2>
+        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
           Salva i dati in un vero database in cloud (Supabase), così puoi usare il gestionale da più dispositivi e recuperare tutto se perdi questo. Serve un progetto Supabase gratuito con le tabelle create (vedi lo schema fornito a parte).
         </p>
-<div class="field">
-<label for="sbUrl">URL progetto Supabase</label>
-<input id="sbUrl" placeholder="https://xxxxxxxx.supabase.co" type="text"/>
+        <div class="field">
+          <label for="sbUrl">URL progetto Supabase</label>
+          <input type="text" id="sbUrl" placeholder="https://xxxxxxxx.supabase.co">
+        </div>
+        <div class="field">
+          <label for="sbKey">Chiave anon pubblica</label>
+          <input type="password" id="sbKey" placeholder="eyJhbGciOi...">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button type="button" class="btn secondary" id="sbSaveConfigBtn">Salva impostazioni</button>
+          <button type="button" class="btn primary" id="sbPushBtn">Salva su Supabase adesso</button>
+          <button type="button" class="btn secondary" id="sbPullBtn">Carica da Supabase</button>
+        </div>
+        <p id="sbLastSync" style="font-size:11.5px;color:var(--ink-soft);margin:0;"></p>
+      </div>
+    </section>
+
+
+  </main>
 </div>
-<div class="field">
-<label for="sbKey">Chiave anon pubblica</label>
-<input id="sbKey" placeholder="eyJhbGciOi..." type="password"/>
-</div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-<button class="btn secondary" id="sbSaveConfigBtn" type="button">Salva impostazioni</button>
-<button class="btn primary" id="sbPushBtn" type="button">Salva su Supabase adesso</button>
-<button class="btn secondary" id="sbPullBtn" type="button">Carica da Supabase</button>
-</div>
-<p id="sbLastSync" style="font-size:11.5px;color:var(--ink-soft);margin:0;"></p>
-</div>
-</section>
-</main>
-</div>
+
 <div class="toast" id="toast"></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="storage-compat.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
