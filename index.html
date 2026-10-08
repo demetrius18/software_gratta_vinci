@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>Gestionale Gratta e Vinci</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style>
   :root{
     --paper:#F2F3F0;
@@ -509,232 +510,189 @@
   }
   @media(max-width:540px){.tiles-grid{grid-template-columns:1fr;}.till .amount{font-size:40px;}}
 
+
+.page-title{letter-spacing:-.05em;font-weight:650}
+.till,.panel,.stat{box-shadow:none}
+.btn,.nav-btn,.add-game-btn{transition:background-color .15s ease,transform .15s ease}
+.btn:active,.add-game-btn:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #526b5d;outline-offset:3px}
+.cassa-side .register-panel{position:sticky;top:20px}
+@media(max-width:1050px){.cassa-side .register-panel{position:static}}
 </style>
 </head>
 <body>
-
 <div class="app">
-  <nav class="sidebar">
-    <div class="brand">Gestionale<br>Gratta e Vinci</div>
-    <div class="nav-label">Attività</div>
-    <button class="nav-btn active" data-view="cassa">Cassa</button>
-    <div class="nav-label">Gestione</div>
-    <button class="nav-btn" data-view="magazzino">Magazzino</button>
-    <button class="nav-btn" data-view="configurazione">Configurazione</button>
-  </nav>
+<nav class="sidebar">
+<div class="brand">Gestionale<br/>Gratta e Vinci</div>
+<div class="nav-label">Attività</div>
+<button class="nav-btn active" data-view="cassa">Cassa</button>
+<div class="nav-label">Gestione</div>
+<button class="nav-btn" data-view="magazzino">Magazzino</button>
+<button class="nav-btn" data-view="configurazione">Configurazione</button>
+</nav>
+<main class="content">
+<section class="view active" id="view-cassa">
+<h1 class="page-title">Cassa</h1>
+<div class="till">
+<div class="label">Saldo cassa totale (solo contanti — non include il magazzino)</div>
+<div class="amount" id="saldoTotale">—</div>
+</div>
+<div class="stat-row">
+<div class="stat" id="statFondo">
+<div class="label">Fondo vincite attuale</div>
+<div class="value num" id="fondoVinciteAttuale">—</div>
+<div class="sub">Iniziale: <span class="num" id="fondoInizialeDisplay">—</span> €</div>
+</div>
+<div class="stat">
+<div class="label">Incasso vendite</div>
+<div class="value num" id="incassoVendite">—</div>
+<div class="sub" id="pezziVendutiSub">—</div>
+</div>
+<div class="stat stat-magazzino">
+<div class="label">Valore magazzino attuale</div>
+<div class="value num" id="valoreMagazzinoAttuale">—</div>
+<div class="sub">Ordine iniziale: <span class="num" id="valoreMagazzinoInizialeDisplay">—</span> €</div>
+<div class="tag-non-cassa">Non è cassa — è merce</div>
+</div>
+<div class="stat">
+<div class="value num" id="cassaNetta">—</div>
+<div class="label">Cassa netta</div>
+<div class="sub">Vendite − pagamenti vincite</div>
+</div>
+</div>
+<div class="cassa-main">
+<div class="cassa-tiles">
+<div class="tiles-toolbar">
+<div class="tiles-toolbar-title">Gratta e Vinci disponibili</div>
+<div class="tiles-toolbar-actions">
+<select class="game-sort" id="gameSortSelect" title="Ordine dei Gratta e Vinci">
+<option value="price_desc">Prezzo: più grande → più piccolo</option>
+<option value="price_asc">Prezzo: più piccolo → più grande</option>
+<option value="custom">Ordine inserimento</option>
+</select>
+<button class="add-game-btn" id="addGameBtn" title="Aggiungi nuovo Gratta e Vinci" type="button">+</button>
+</div>
+</div>
+<div class="tiles-grid" id="tilesGrid"></div>
+<input accept="image/*" id="tileImageInput" style="display:none;" type="file"/>
+</div>
+<div class="cassa-side">
 
-  <main class="content">
-
-    <section class="view active" id="view-cassa">
-      <h1 class="page-title">Cassa</h1>
-
-      <div class="till">
-        <div class="label">Saldo cassa totale (solo contanti — non include il magazzino)</div>
-        <div class="amount" id="saldoTotale">—</div>
-      </div>
-
-      <div class="stat-row">
-        <div class="stat" id="statFondo">
-          <div class="label">Fondo vincite attuale</div>
-          <div class="value num" id="fondoVinciteAttuale">—</div>
-          <div class="sub">Iniziale: <span class="num" id="fondoInizialeDisplay">—</span> €</div>
-        </div>
-        <div class="stat">
-          <div class="label">Incasso vendite</div>
-          <div class="value num" id="incassoVendite">—</div>
-          <div class="sub" id="pezziVendutiSub">—</div>
-        </div>
-        <div class="stat stat-magazzino">
-          <div class="label">Valore magazzino attuale</div>
-          <div class="value num" id="valoreMagazzinoAttuale">—</div>
-          <div class="sub">Ordine iniziale: <span class="num" id="valoreMagazzinoInizialeDisplay">—</span> €</div>
-          <div class="tag-non-cassa">Non è cassa — è merce</div>
-        </div>
-        <div class="stat">
-          <div class="value num" id="cassaNetta">—</div>
-          <div class="label">Cassa netta</div>
-          <div class="sub">Vendite − pagamenti vincite</div>
-        </div>
-      </div>
-
-      <div class="cassa-main">
-        <div class="cassa-tiles">
-          <div class="tiles-toolbar">
-            <div class="tiles-toolbar-title">Gratta e Vinci disponibili</div>
-            <div class="tiles-toolbar-actions">
-              <select id="gameSortSelect" class="game-sort" title="Ordine dei Gratta e Vinci">
-                <option value="price_desc">Prezzo: più grande → più piccolo</option>
-                <option value="price_asc">Prezzo: più piccolo → più grande</option>
-                <option value="custom">Ordine inserimento</option>
-              </select>
-              <button type="button" class="add-game-btn" id="addGameBtn" title="Aggiungi nuovo Gratta e Vinci">+</button>
-            </div>
-          </div>
-          <div class="tiles-grid" id="tilesGrid"></div>
-          <input type="file" id="tileImageInput" accept="image/*" style="display:none;">
-        </div>
-
-        <div class="cassa-side">
-          <div class="panel quick-pay-panel">
-            <h2>Riscossione vincita</h2>
-            <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 8px;">Registra una riscossione in denaro. La vincita del biglietto e la riscossione sono due operazioni separate.</p>
-            <div style="display:flex;gap:6px;">
-              <input type="number" id="quickContantiInput" min="0" step="0.01" placeholder="Importo €" style="flex:1;">
-              <button type="button" class="btn primary" id="quickContantiBtn" style="flex-shrink:0;">Paga</button>
-            </div>
-          </div>
-
-          <div class="panel register-panel">
-            <h2>Registro operazioni</h2>
-            <ul class="ops-list" id="opsList"></ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>
+<div class="panel register-panel">
+<h2>Registro operazioni</h2>
+<ul class="ops-list" id="opsList"></ul>
+</div>
+</div>
+</div>
+<div class="panel">
+<h2>
           Storico giornaliero
           <button class="btn secondary" id="chiudiGiornataBtn" style="float:right;padding:5px 12px;font-size:12px;margin-top:-4px;">Chiudi giornata adesso</button>
-        </h2>
-        <table class="mg">
-          <thead><tr><th>Giorno</th><th>Pezzi</th><th>Incasso</th><th>Pagamenti vincite</th><th>Cassa netta</th></tr></thead>
-          <tbody id="storicoBody"></tbody>
-        </table>
-        <button class="btn secondary" id="exportExcelBtn" style="width:100%;">Scarica Excel (.xlsx)</button>
-      </div>
-
-      <div class="panel">
-        <h2>Tutte le operazioni</h2>
-        <table class="mg">
-          <thead><tr><th>Data</th><th>Tipo</th><th>Dettaglio</th><th>Importo</th><th></th></tr></thead>
-          <tbody id="operazioniCompleteBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="view" id="view-magazzino">
-      <h1 class="page-title">Magazzino</h1>
-      <div class="panel">
-        <h2>Magazzino <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">— modifica prezzo o giacenza, si aggiorna subito. I nuovi Gratta e Vinci si aggiungono con il pulsante + nella Cassa.</span></h2>
-        <table class="mg">
-          <thead><tr><th>Gioco</th><th style="width:110px;">Prezzo (€)</th><th style="width:110px;">Giacenza</th><th>Valore giacenza</th><th style="width:80px;">Azioni</th></tr></thead>
-          <tbody id="magazzinoBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="view" id="view-configurazione">
-      <h1 class="page-title">Configurazione</h1>
-
-      <div class="panel" id="lockPanel">
-        <h2>Blocco configurazione</h2>
-        <div id="lockStatusUnlocked">
-          <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">
+</h2>
+<table class="mg">
+<thead><tr><th>Giorno</th><th>Pezzi</th><th>Incasso</th><th>Pagamenti vincite</th><th>Cassa netta</th></tr></thead>
+<tbody id="storicoBody"></tbody>
+</table>
+<button class="btn secondary" id="exportExcelBtn" style="width:100%;">Scarica Excel (.xlsx)</button>
+</div>
+<div class="panel">
+<h2>Tutte le operazioni</h2>
+<table class="mg">
+<thead><tr><th>Data</th><th>Tipo</th><th>Dettaglio</th><th>Importo</th><th></th></tr></thead>
+<tbody id="operazioniCompleteBody"></tbody>
+</table>
+</div>
+</section>
+<section class="view" id="view-magazzino">
+<h1 class="page-title">Magazzino</h1>
+<div class="panel">
+<h2>Magazzino <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">— modifica prezzo o giacenza, si aggiorna subito. I nuovi Gratta e Vinci si aggiungono con il pulsante + nella Cassa.</span></h2>
+<table class="mg">
+<thead><tr><th>Gioco</th><th style="width:110px;">Prezzo (€)</th><th style="width:110px;">Giacenza</th><th>Valore giacenza</th><th style="width:80px;">Azioni</th></tr></thead>
+<tbody id="magazzinoBody"></tbody>
+</table>
+</div>
+</section>
+<section class="view" id="view-configurazione">
+<h1 class="page-title">Configurazione</h1>
+<div class="panel" id="lockPanel">
+<h2>Blocco configurazione</h2>
+<div id="lockStatusUnlocked">
+<p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;">
             Una volta impostato tutto (fondo, valore magazzino, prezzi), blocca la configurazione con un PIN per evitare modifiche accidentali. Vendite, vincite e chiusura giornata restano sempre disponibili.
           </p>
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-            <div class="field" style="max-width:160px;margin-bottom:0;">
-              <label for="setPinInput">Imposta un PIN (4 cifre)</label>
-              <input type="password" id="setPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •">
-            </div>
-            <button type="button" class="btn primary" id="lockBtn" style="margin-bottom:0;">Blocca configurazione</button>
-          </div>
-        </div>
-        <div id="lockStatusLocked" style="display:none;">
-          <p style="font-size:13px;margin:0 0 10px;">🔒 Configurazione bloccata. Prezzi, giacenze e fondi non sono modificabili.</p>
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-            <div class="field" style="max-width:160px;margin-bottom:0;">
-              <label for="unlockPinInput">PIN per sbloccare</label>
-              <input type="password" id="unlockPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •">
-            </div>
-            <button type="button" class="btn secondary" id="unlockBtn" style="margin-bottom:0;">Sblocca</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Configurazione fondo cassa</h2>
-        <div class="field" style="max-width:260px;">
-          <label for="fondoIniziale2">Fondo vincite iniziale (€)</label>
-          <input type="number" id="fondoIniziale2" min="0" step="1">
-        </div>
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 14px;">
+<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+<div class="field" style="max-width:160px;margin-bottom:0;">
+<label for="setPinInput">Imposta un PIN (4 cifre)</label>
+<input id="setPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •" type="password"/>
+</div>
+<button class="btn primary" id="lockBtn" style="margin-bottom:0;" type="button">Blocca configurazione</button>
+</div>
+</div>
+<div id="lockStatusLocked" style="display:none;">
+<p style="font-size:13px;margin:0 0 10px;">🔒 Configurazione bloccata. Prezzi, giacenze e fondi non sono modificabili.</p>
+<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+<div class="field" style="max-width:160px;margin-bottom:0;">
+<label for="unlockPinInput">PIN per sbloccare</label>
+<input id="unlockPinInput" inputmode="numeric" maxlength="4" placeholder="• • • •" type="password"/>
+</div>
+<button class="btn secondary" id="unlockBtn" style="margin-bottom:0;" type="button">Sblocca</button>
+</div>
+</div>
+</div>
+<div class="panel">
+<h2>Configurazione fondo cassa</h2>
+<div class="field" style="max-width:260px;">
+<label for="fondoIniziale2">Fondo vincite iniziale (€)</label>
+<input id="fondoIniziale2" min="0" step="1" type="number"/>
+</div>
+<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 14px;">
           Il denaro che tieni in cassa per pagare le vincite ai clienti. Cambialo quando reintegri il fondo o cambi importo di partenza — si aggiorna subito ovunque.
         </p>
-        <div class="field" style="max-width:260px;">
-          <label for="valoreMagazzinoIniziale2">Valore ordine magazzino (€)</label>
-          <input type="number" id="valoreMagazzinoIniziale2" min="0" step="1">
-        </div>
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
+<div class="field" style="max-width:260px;">
+<label for="valoreMagazzinoIniziale2">Valore ordine magazzino (€)</label>
+<input id="valoreMagazzinoIniziale2" min="0" step="1" type="number"/>
+</div>
+<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
           Il costo dell'ordine di gratta e vinci ricevuto dal distributore. È un valore di merce, separato dalla cassa: aggiornalo quando arriva un nuovo ordine.
         </p>
-      </div>
-
-      <div class="panel">
-        <h2>Backup dati (file locale)</h2>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <button class="btn secondary" id="exportBtn" style="flex:1;">Esporta backup (.json)</button>
-          <button class="btn secondary" id="importBtn" style="flex:1;">Importa backup (.json)</button>
-        </div>
-        <input type="file" id="importFileInput" accept="application/json" style="display:none;">
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
+</div>
+<div class="panel">
+<h2>Backup dati (file locale)</h2>
+<div style="display:flex;gap:8px;margin-bottom:10px;">
+<button class="btn secondary" id="exportBtn" style="flex:1;">Esporta backup (.json)</button>
+<button class="btn secondary" id="importBtn" style="flex:1;">Importa backup (.json)</button>
+</div>
+<input accept="application/json" id="importFileInput" style="display:none;" type="file"/>
+<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
           I dati restano salvati in questo browser. Esporta un backup di tanto in tanto, e usa "Importa" per ripristinarlo su questo o un altro dispositivo.
         </p>
-      </div>
-
-      <div class="panel" id="ghPanel">
-        <h2>Salvataggio su GitHub</h2>
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
-          Salva una copia di tutti i dati in un repository GitHub, al sicuro anche se perdi questo dispositivo. Ti serve un repository (anche privato) e un token di accesso personale con permesso di scrittura su quel repository.
-        </p>
-        <div class="field">
-          <label for="ghRepo">Repository (utente/nome-repo)</label>
-          <input type="text" id="ghRepo" placeholder="mariorossi/backup-gratta-vinci">
-        </div>
-        <div class="field">
-          <label for="ghPath">Percorso del file nel repository</label>
-          <input type="text" id="ghPath" placeholder="backup/gestionale.json">
-        </div>
-        <div class="field">
-          <label for="ghToken">Token di accesso personale GitHub</label>
-          <input type="password" id="ghToken" placeholder="ghp_...">
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <button type="button" class="btn secondary" id="ghSaveConfigBtn">Salva impostazioni</button>
-          <button type="button" class="btn primary" id="ghPushBtn">Salva su GitHub adesso</button>
-          <button type="button" class="btn secondary" id="ghPullBtn">Carica da GitHub</button>
-        </div>
-        <p id="ghLastSync" style="font-size:11.5px;color:var(--ink-soft);margin:0;"></p>
-      </div>
-
-      <div class="panel" id="sbPanel">
-        <h2>Sincronizzazione con Supabase</h2>
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
-          Salva i dati in un vero database in cloud (Supabase), così puoi usare il gestionale da più dispositivi e recuperare tutto se perdi questo. Serve un progetto Supabase gratuito con le tabelle create (vedi lo schema fornito a parte).
-        </p>
-        <div class="field">
-          <label for="sbUrl">URL progetto Supabase</label>
-          <input type="text" id="sbUrl" placeholder="https://xxxxxxxx.supabase.co">
-        </div>
-        <div class="field">
-          <label for="sbKey">Chiave anon pubblica</label>
-          <input type="password" id="sbKey" placeholder="eyJhbGciOi...">
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <button type="button" class="btn secondary" id="sbSaveConfigBtn">Salva impostazioni</button>
-          <button type="button" class="btn primary" id="sbPushBtn">Salva su Supabase adesso</button>
-          <button type="button" class="btn secondary" id="sbPullBtn">Carica da Supabase</button>
-        </div>
-        <p id="sbLastSync" style="font-size:11.5px;color:var(--ink-soft);margin:0;"></p>
-      </div>
-    </section>
-
-
-  </main>
 </div>
 
+<div class="panel" id="sbPanel">
+<h2>Sincronizzazione con Supabase</h2>
+<p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
+          Salva i dati in un vero database in cloud (Supabase), così puoi usare il gestionale da più dispositivi e recuperare tutto se perdi questo. Serve un progetto Supabase gratuito con le tabelle create (vedi lo schema fornito a parte).
+        </p>
+<div class="field">
+<label for="sbUrl">URL progetto Supabase</label>
+<input id="sbUrl" placeholder="https://xxxxxxxx.supabase.co" type="text"/>
+</div>
+<div class="field">
+<label for="sbKey">Chiave anon pubblica</label>
+<input id="sbKey" placeholder="eyJhbGciOi..." type="password"/>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+<button class="btn secondary" id="sbSaveConfigBtn" type="button">Salva impostazioni</button>
+<button class="btn primary" id="sbPushBtn" type="button">Salva su Supabase adesso</button>
+<button class="btn secondary" id="sbPullBtn" type="button">Carica da Supabase</button>
+</div>
+<p id="sbLastSync" style="font-size:11.5px;color:var(--ink-soft);margin:0;"></p>
+</div>
+</section>
+</main>
+</div>
 <div class="toast" id="toast"></div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>

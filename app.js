@@ -286,6 +286,7 @@
 
   async function pagaContantiVincita(){
     var input = document.getElementById('quickContantiInput');
+    if(!input) return;
     var importo = Number(input.value) || 0;
     if(importo <= 0){ showToast("Inserisci un importo valido"); return; }
     state.operations.push({
@@ -451,77 +452,6 @@
 
   function importBackupFromFile(){
     document.getElementById('importFileInput').click();
-  }
-
-  // ---------- Salvataggio su GitHub ----------
-  var ghConfig = { repo: "", path: "backup/gestionale.json", token: "" };
-
-  async function loadGhConfig(){
-    try{ var r = await storageGet('gv_gh_config'); if(r && r.value) ghConfig = JSON.parse(r.value); }catch(e){}
-  }
-  async function saveGhConfig(){
-    if(!storageSet('gv_gh_config', JSON.stringify(ghConfig))) showToast("Errore nel salvataggio locale");
-  }
-
-  function utf8ToBase64(str){ return btoa(unescape(encodeURIComponent(str))); }
-  function base64ToUtf8(b64){ return decodeURIComponent(escape(atob(b64.replace(/\n/g, "")))); }
-
-  function ghUrl(path){ return "https://api.github.com/repos/" + ghConfig.repo + "/contents/" + path; }
-
-  async function ghPush(){
-    if(locked){ showToast("Sblocca la configurazione per salvare su GitHub"); return; }
-    if(!ghConfig.repo || !ghConfig.token){ showToast("Configura repository e token prima"); return; }
-    try{
-      var sha = null;
-      var getResp = await fetch(ghUrl(ghConfig.path), {
-        headers: { "Authorization": "token " + ghConfig.token, "Accept": "application/vnd.github+json" }
-      });
-      if(getResp.status === 200){
-        var getData = await getResp.json();
-        sha = getData.sha;
-      } else if(getResp.status !== 404){
-        showToast("Errore GitHub (" + getResp.status + ")");
-        return;
-      }
-      var body = { message: "Backup gestionale " + todayISO() + " " + nowOra(), content: utf8ToBase64(JSON.stringify(buildBackupPayload(), null, 2)) };
-      if(sha) body.sha = sha;
-      var putResp = await fetch(ghUrl(ghConfig.path), {
-        method: "PUT",
-        headers: { "Authorization": "token " + ghConfig.token, "Accept": "application/vnd.github+json", "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      if(putResp.ok){
-        document.getElementById('ghLastSync').textContent = "Ultimo salvataggio su GitHub: " + new Date().toLocaleString('it-IT');
-        showToast("Backup salvato su GitHub");
-      } else {
-        var errBody = await putResp.json().catch(function(){ return {}; });
-        showToast("Errore salvataggio GitHub: " + (errBody.message || putResp.status));
-      }
-    } catch(e){
-      showToast("Errore di connessione a GitHub");
-    }
-  }
-
-  async function ghPull(){
-    if(locked){ showToast("Sblocca la configurazione per caricare da GitHub"); return; }
-    if(!ghConfig.repo || !ghConfig.token){ showToast("Configura repository e token prima"); return; }
-    try{
-      var getResp = await fetch(ghUrl(ghConfig.path), {
-        headers: { "Authorization": "token " + ghConfig.token, "Accept": "application/vnd.github+json" }
-      });
-      if(!getResp.ok){
-        showToast("File non trovato su GitHub (" + getResp.status + ")");
-        return;
-      }
-      var data = await getResp.json();
-      var json = base64ToUtf8(data.content);
-      var backup = JSON.parse(json);
-      await applyImportedBackup(backup);
-      document.getElementById('ghLastSync').textContent = "Ultimo caricamento da GitHub: " + new Date().toLocaleString('it-IT');
-      showToast("Dati caricati da GitHub");
-    } catch(e){
-      showToast("Errore nel caricamento da GitHub");
-    }
   }
 
   // ---------- Sincronizzazione con Supabase ----------
@@ -1001,11 +931,6 @@
     showToast(gameSort === 'price_desc' ? 'Ordine: dal più grande al più piccolo' : gameSort === 'price_asc' ? 'Ordine: dal più piccolo al più grande' : 'Ordine personalizzato');
   });
 
-  document.getElementById('quickContantiBtn').addEventListener('click', pagaContantiVincita);
-  document.getElementById('quickContantiInput').addEventListener('keydown', function(e){
-    if(e.key === 'Enter') pagaContantiVincita();
-  });
-
   document.getElementById('opsList').addEventListener('click', function(e){
     var btn = e.target.closest('.op-del');
     if(btn) deleteOperation(btn.getAttribute('data-id'));
@@ -1064,19 +989,6 @@
     if(!unlockedPanel) return;
     unlockedPanel.style.display = locked ? "none" : "block";
     lockedPanel.style.display = locked ? "block" : "none";
-
-    var ghRepoInput = document.getElementById('ghRepo');
-    var ghPathInput = document.getElementById('ghPath');
-    var ghTokenInput = document.getElementById('ghToken');
-    if(ghRepoInput){
-      if(document.activeElement !== ghRepoInput) ghRepoInput.value = ghConfig.repo;
-      if(document.activeElement !== ghPathInput) ghPathInput.value = ghConfig.path;
-      if(document.activeElement !== ghTokenInput) ghTokenInput.value = ghConfig.token;
-      [ghRepoInput, ghPathInput, ghTokenInput].forEach(function(el){ el.disabled = locked; });
-      ["ghSaveConfigBtn","ghPushBtn","ghPullBtn"].forEach(function(id){
-        document.getElementById(id).disabled = locked;
-      });
-    }
 
     var sbUrlInput = document.getElementById('sbUrl');
     var sbKeyInput = document.getElementById('sbKey');
@@ -1146,17 +1058,6 @@
     e.target.value = "";
   });
 
-  document.getElementById('ghSaveConfigBtn').addEventListener('click', async function(){
-    if(locked) return;
-    ghConfig.repo = document.getElementById('ghRepo').value.trim();
-    ghConfig.path = document.getElementById('ghPath').value.trim() || "backup/gestionale.json";
-    ghConfig.token = document.getElementById('ghToken').value.trim();
-    await saveGhConfig();
-    showToast("Impostazioni GitHub salvate");
-  });
-  document.getElementById('ghPushBtn').addEventListener('click', ghPush);
-  document.getElementById('ghPullBtn').addEventListener('click', ghPull);
-
   document.getElementById('sbSaveConfigBtn').addEventListener('click', async function(){
     if(locked) return;
     sbConfig.url = document.getElementById('sbUrl').value.trim();
@@ -1174,7 +1075,7 @@
   loadState()
     .then(function(){ return loadArchivio(); })
     .then(function(){ return loadLock(); })
-    .then(function(){ return loadGhConfig(); })
+    
     .then(function(){ return loadSbConfig(); })
     .then(function(){ return checkMissedMidnight(); })
     .then(function(){ scheduleMidnightClose(); startRegistroRefreshTimer(); renderAll(); })
