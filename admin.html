@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gratta e Vinci · Direzione</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#17221e;background:#f4f6f4}*{box-sizing:border-box}
+body{margin:0}header{background:#152c25;color:white;padding:22px max(24px,calc((100vw - 1180px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px}header small{color:#9bc5b4;letter-spacing:.15em;text-transform:uppercase}header h1{margin:5px 0 0;font-size:23px}main{max-width:1180px;margin:35px auto;padding:0 22px}.panel{background:white;border:1px solid #e0e7e1;border-radius:16px;padding:26px;box-shadow:0 8px 28px #18271c08}.login{max-width:430px;margin:9vh auto}h2{margin:0 0 16px}label{display:block;font-size:13px;font-weight:650;margin:16px 0 7px}input,select{width:100%;padding:12px;border:1px solid #cbd6cf;border-radius:9px;background:white;font:inherit}button{border:0;border-radius:9px;padding:12px 19px;background:#247350;color:white;font-weight:700;cursor:pointer}button.secondary{background:#e5eee8;color:#244836}button:disabled{opacity:.55;cursor:wait}.muted{color:#6c7971}.error{color:#b33736;white-space:pre-wrap}.success{color:#247350}.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px}.toolbar select{max-width:300px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:15px;margin-bottom:22px}.stat{background:white;border:1px solid #e0e7e1;border-radius:14px;padding:22px}.stat b{display:block;font-size:25px;margin-top:10px}.stat small{color:#607368}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #e5ebe6;font-size:13px}th{color:#53655b}td.num,th.num{text-align:right}#dashboard,#logout{display:none}@media(max-width:600px){header{padding:20px}main{margin:20px auto}.panel{padding:17px}table{display:block;overflow:auto}}
+</style></head><body>
+<header><div><small>HippoGroup · Direzione</small><h1>Gratta e Vinci · Multisede</h1></div><button id="logout" class="secondary">Esci</button></header>
+<main>
+<section id="login" class="panel login"><h2>Accesso amministratore</h2><p class="muted">Accedi con le credenziali Supabase autorizzate.</p><form id="loginForm"><label for="email">Email</label><input id="email" type="email" autocomplete="username" required value="buruian@hippogroup.it"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><p><button id="loginBtn" type="submit">Accedi</button></p></form><p id="loginError" class="error" role="alert"></p></section>
+<section id="dashboard"><div class="toolbar"><div><h2 style="margin:0">Riepilogo sedi</h2><p id="identity" class="muted"></p></div><select id="sede" aria-label="Seleziona sede"><option value="">Tutte le sedi</option></select><button id="refresh" class="secondary">Aggiorna</button></div>
+<p id="status" role="status" class="muted"></p><div class="stats"><div class="stat"><small>Operazioni</small><b id="opCount">—</b></div><div class="stat"><small>Vendite registrate</small><b id="sales">—</b></div><div class="stat"><small>Riscossioni</small><b id="payouts">—</b></div><div class="stat"><small>Valore magazzino attuale</small><b id="stock">—</b></div></div>
+<div class="panel"><h2>Ultime operazioni</h2><div style="overflow:auto"><table><thead><tr><th>Data</th><th>Sede</th><th>Tipo</th><th>Gioco</th><th class="num">Importo</th></tr></thead><tbody id="operations"></tbody></table></div></div>
+</section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+const URL_SB='https://kwidkukwvnqozunkiogp.supabase.co';
+const KEY_SB='sb_publishable_P_v_qt0cNcBAVodX3wrB_g_Tom4EoGq';
+const sb=window.supabase.createClient(URL_SB,KEY_SB);
+const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n||0);
+let sedi=[];
+function show(logged){$('login').style.display=logged?'none':'block';$('dashboard').style.display=logged?'block':'none';$('logout').style.display=logged?'inline-block':'none'}
+async function authorize(){
+ const {data:{user},error:ue}=await sb.auth.getUser();if(ue||!user){show(false);return}
+ const {data:members,error:me}=await sb.from('gv_utenti_sedi').select('sede_id,ruolo').eq('user_id',user.id);
+ if(me)throw me;
+ if(!members||!members.some(m=>m.ruolo==='admin')){await sb.auth.signOut();show(false);$('loginError').textContent='Account privo del ruolo amministratore.';return}
+ const {data, error}=await sb.from('gv_sedi').select('id,codice,nome').order('nome');if(error)throw error;
+ sedi=data||[];$('sede').replaceChildren(new Option('Tutte le sedi',''));sedi.forEach(s=>$('sede').add(new Option(s.nome,s.id)));
+ $('identity').textContent=user.email+' · accesso amministratore';show(true);await refresh();
+}
+async function refresh(){
+ const id=$('sede').value;$('status').textContent='Caricamento dati…';$('refresh').disabled=true;
+ try{
+  let ops=sb.from('gv_operations').select('id,sede_id,data,ora,tipo,gioco,importo,quantita').order('data',{ascending:false}).limit(1000);
+  let games=sb.from('gv_games').select('sede_id,nome,prezzo,giacenza').limit(1000);
+  if(id){ops=ops.eq('sede_id',id);games=games.eq('sede_id',id)}
+  const [or,gr]=await Promise.all([ops,games]);if(or.error)throw or.error;if(gr.error)throw gr.error;
+  const operations=or.data||[],inventory=gr.data||[];
+  $('opCount').textContent=operations.length+(operations.length===1000?' (max 1000)':'');
+  $('sales').textContent=money(operations.filter(x=>x.tipo==='VENDITA').reduce((s,x)=>s+Number(x.importo||0),0));
+  $('payouts').textContent=money(operations.filter(x=>x.tipo==='RISCOSSIONE').reduce((s,x)=>s+Number(x.importo||0),0));
+  $('stock').textContent=money(inventory.reduce((s,x)=>s+Number(x.prezzo||0)*Number(x.giacenza||0),0));
+  const body=$('operations');body.replaceChildren();operations.slice(0,70).forEach(op=>{const tr=document.createElement('tr');const values=[op.data+(op.ora?' '+op.ora:''),sedi.find(s=>s.id===op.sede_id)?.nome||'—',op.tipo,op.gioco||'—',money(op.importo)];values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===4)td.className='num';tr.append(td)});body.append(tr)});
+  $('status').textContent='Dati letti da Supabase · il pannello è in sola lettura. I totali delle operazioni considerano fino a 1000 record per selezione.';
+ }catch(e){$('status').textContent='Errore: '+e.message}finally{$('refresh').disabled=false}
+}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginError').textContent='';$('loginBtn').disabled=true;try{const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await authorize()}catch(err){$('loginError').textContent=err.message}finally{$('loginBtn').disabled=false}});
+$('logout').addEventListener('click',async()=>{await sb.auth.signOut();show(false)});
+$('refresh').addEventListener('click',refresh);$('sede').addEventListener('change',refresh);
+authorize().catch(e=>{$('loginError').textContent=e.message;show(false)});
+</script></body></html>
