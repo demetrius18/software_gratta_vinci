@@ -1,0 +1,9 @@
+VERSIONE V3 — Registro rapido e riepilogo giornaliero
+
+1. Il registro rapido mostra solo le operazioni degli ultimi 5 minuti; tutte le operazioni restano conservate nella sezione "Tutte le operazioni" e nel database.
+2. Il pulsante "Chiudi giornata adesso" e stato rinominato "Salva riepilogo provvisorio". Non blocca le operazioni e non effettua una chiusura contabile definitiva: aggiorna una fotografia dei totali del giorno.
+3. La chiusura automatica alla mezzanotte resta nella versione precedente e non e stata riprogettata in questa patch.
+4. Attenzione: i riepiloghi sono ancora calcolati nel browser e sincronizzati in modo asincrono; non usarli come chiusura contabile ufficiale. Il sistema NON e ancora sicuro per operazioni simultanee su piu dispositivi.
+5. Caricare su ramo di test, verificare con due dispositivi e conservare backup.
+
+Proposta successiva: introdurre chiusure ufficiali per sede/data con stato aperta/chiusa, conferma admin, snapshot immutabile, audit e transazioni atomiche su Supabase.

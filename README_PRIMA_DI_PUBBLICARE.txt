@@ -13,3 +13,9 @@ index.html, app.js, admin.html, login.html, gv-config.js, gv-auth.js
 8. IMPORTANTE: la sincronizzazione non è transazionale: due casse sulla stessa sede possono sovrascrivere le giacenze. Per uso contemporaneo serve una RPC atomica lato database.
 9. Esegui backup di ciascuna sede e verifica vendite, vincite, riscossioni, chiusura, import/export e permessi prima dell'utilizzo reale.
 10. Nessun account, password o credenziale di amministrazione segreta è incluso nel pacchetto. La chiave pubblicabile Supabase NON è una password.
+
+AGGIORNAMENTO V2 - DIREZIONE
+- riepilogo-sedi.html: confronto vendite/pagamenti/saldo/magazzino per tutte le sedi autorizzate come admin; filtri oggi/data/storico ed export CSV.
+- admin.html: collegamento al riepilogo e controllo ruolo admin per l'accesso ai report.
+- I report leggono dati senza modificarli. Le somme sono basate sulle tipologie di operazione presenti nel gestionale; verificare con casi reali.
+- NON ancora idoneo a più casse contemporanee sulla stessa sede: serve sincronizzazione transazionale server-side.

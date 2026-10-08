@@ -446,7 +446,6 @@
     await saveValoreMagazzino();
     await saveOperations();
     await saveArchivio();
-    await saveConteggi();
     renderAll();
   }
 
@@ -518,13 +517,25 @@
       }
       var settings={};s.forEach(function(x){settings[x.key]=x.value;});
       var arch={};a.forEach(function(x){if(!arch[x.data])arch[x.data]={};arch[x.data][x.turno]={data:x.data,turno:x.turno,pezzi:x.pezzi,incassoVendite:Number(x.incasso_vendite),pagamenti:Number(x.pagamenti),cassaNettaGiorno:Number(x.cassa_netta),numOperazioni:x.num_operazioni};});
-      await applyImportedBackup({
+      var cloudSnapshot = {
         games:g.map(function(x){return {nome:x.nome,prezzo:Number(x.prezzo),giacenza:Number(x.giacenza),color:x.colore||'#2F6B4F',immagine:x.immagine||null};}),
         operations:o.map(function(x){return {id:x.id,data:x.data,ora:x.ora||null,ts:x.ts||null,tipo:x.tipo,gioco:x.gioco||'',quantita:Number(x.quantita)||0,importo:Number(x.importo)||0,importoVinto:x.importo_vinto==null?undefined:Number(x.importo_vinto),schede:x.schede||[],note:x.note||''};}),
         fondoIniziale:settings.fondo_iniziale==null?0:Number(settings.fondo_iniziale),
         valoreMagazzinoIniziale:settings.valore_magazzino_iniziale==null?undefined:Number(settings.valore_magazzino_iniziale),
         archivioGiornaliero:arch
-      });
+      };
+      // Lettura cloud: aggiorna SOLO lo stato locale, senza riscrivere il database.
+      state.games = cloudSnapshot.games;
+      state.operations = cloudSnapshot.operations;
+      state.fondoIniziale = cloudSnapshot.fondoIniziale;
+      if(cloudSnapshot.valoreMagazzinoIniziale !== undefined) state.valoreMagazzinoIniziale = cloudSnapshot.valoreMagazzinoIniziale;
+      archivio = cloudSnapshot.archivioGiornaliero;
+      await saveGames();
+      await saveOperations();
+      await saveFondo();
+      await saveValoreMagazzino();
+      await saveArchivio();
+      renderAll();
       syncReady=true;
       document.getElementById('sbLastSync').textContent='Caricato dal cloud · '+new Date().toLocaleString('it-IT');
       showToast('Dati sede caricati dal cloud');
@@ -660,7 +671,7 @@
   // Il registro a destra mostra solo le operazioni "vive": fatte di recente.
   // Dopo questa finestra di tempo, un'operazione non scompare dai dati - esce
   // solo dal registro in tempo reale, e resta visibile in "Tutte le operazioni".
-  var REGISTRO_FINESTRA_MS = 2 * 60 * 60 * 1000; // 2 ore
+  var REGISTRO_FINESTRA_MS = 5 * 60 * 1000; // 5 minuti: solo visibilita nel registro rapido
 
   function renderOpsList(){
     var opsList = document.getElementById('opsList');
@@ -670,7 +681,7 @@
       return op.ts && (ora - op.ts) <= REGISTRO_FINESTRA_MS;
     });
     if(recenti.length === 0){
-      opsList.innerHTML = "<div class='empty-state'>Nessuna operazione nelle ultime 2 ore.<br>Le operazioni più vecchie sono in \u201cTutte le operazioni\u201d qui sotto.</div>";
+      opsList.innerHTML = "<div class='empty-state'>Nessuna operazione negli ultimi 5 minuti.<br>Le operazioni più vecchie sono in \u201cTutte le operazioni\u201d qui sotto.</div>";
       return;
     }
     recenti.slice(0, 40).forEach(function(op){
@@ -976,7 +987,7 @@
     await chiudiGiornata(oggi);
     renderRiepilogo();
     scheduleSbAutoSync();
-    showToast("Giornata del " + fmtDate(oggi) + " chiusa e salvata");
+    showToast("Riepilogo provvisorio del " + fmtDate(oggi) + " salvato. La giornata resta aperta.");
   });
 
   document.getElementById('exportBtn').addEventListener('click', exportBackup);
