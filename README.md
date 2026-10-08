@@ -1,1 +1,0 @@
-# software_gratta_vinci
