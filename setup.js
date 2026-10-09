@@ -24,7 +24,7 @@ const names=new Set();let parsed=data.games.map(g=>{
 const nome=String(g.nome||'').trim(),prezzo=Number(g.prezzo),giacenza=Number(g.giacenza);
 if(!nome||!Number.isFinite(prezzo)||prezzo<=0||!Number.isSafeInteger(giacenza)||giacenza<0)throw Error('Modello non valido: '+nome);
 if(names.has(nome.toLowerCase()))throw Error('Modello duplicato: '+nome);names.add(nome.toLowerCase());
-return {nome,prezzo,giacenza,colore:typeof g.color==='string'?g.color:'#2E4A73',immagine:typeof g.immagine==='string'?g.immagine:null};
+return {nome,prezzo,giacenza,colore:typeof (g.colore||g.color)==='string'?(g.colore||g.color):'#2E4A73',immagine:typeof g.immagine==='string'?g.immagine:null};
 });
 items=parsed;if(data.fondoIniziale!=null&&Number.isFinite(Number(data.fondoIniziale)))$('fund').value=Number(data.fondoIniziale);
 $('preview').textContent=`${items.length} modelli caricati. ${Array.isArray(data.operations)?data.operations.length:0} operazioni storiche NON saranno importate.`;
@@ -54,7 +54,7 @@ const rows=items.map((x,i)=>({...x,sede_id:sede.id,ordine:i}));
 const {error}=await client.from('gv_games').insert(rows);if(error)throw error;
 const {error:fe}=await client.from('gv_settings').upsert({sede_id:sede.id,key:'fondo_iniziale',value:String(fondo)},{onConflict:'sede_id,key'});
 if(fe)throw Error('Catalogo inserito, ma fondo non salvato: '+fe.message+'. Non ripetere l’importazione: contatta Admin.');
-say('Configurazione salvata. Apri il gestionale e premi Carica da Supabase.');
+say('Configurazione salvata. Apri il gestionale: i dati verranno sincronizzati da Supabase.');
 ready=false;render();
 }catch(err){say('Salvataggio non completato: '+err.message,true);await check()}
 };
