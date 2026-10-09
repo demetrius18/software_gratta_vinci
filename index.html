@@ -713,7 +713,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     if(document.getElementById('gvHelpLauncher'))return;
     const btn=document.createElement('button');btn.id='gvHelpLauncher';btn.type='button';btn.textContent='? Guida operatore';
     btn.style.cssText='position:fixed!important;bottom:18px!important;right:18px!important;z-index:2147483640!important;display:block!important;visibility:visible!important;opacity:1!important;background:#123c65!important;color:white!important;border:2px solid #fff!important;border-radius:28px!important;padding:13px 18px!important;font:700 14px Arial,sans-serif!important;box-shadow:0 3px 18px #0008!important;cursor:pointer!important';
-    btn.onclick=function(){
+    btn.onclick=function(){openHelp();};
+    function openHelp(topicName){
       const old=document.getElementById('gvHelpStandalone');if(old){old.remove();return;}
       const backdrop=document.createElement('div');backdrop.id='gvHelpStandalone';backdrop.style.cssText='position:fixed;inset:0;z-index:2147483641;background:#0009;display:flex;align-items:center;justify-content:center;padding:12px';
       const panel=document.createElement('div');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Guida operatore');
@@ -735,9 +736,24 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         const warn=document.createElement('div');warn.textContent='ATTENZIONE — '+topic.warning;warn.style.cssText='padding:12px;background:#fff3e6;border-left:4px solid #d97706;border-radius:7px;font-weight:600';detail.appendChild(warn);
       }
       topics.forEach(function(topic,index){const item=document.createElement('button');item.type='button';item.textContent=topic.icon+' '+topic.name;item.style.cssText='padding:11px 8px;text-align:left;background:#edf2f8;color:#152238;border:0;border-radius:8px;cursor:pointer;font:600 14px Arial,sans-serif';item.onclick=function(){showTopic(topic,index);};buttons.push(item);nav.appendChild(item);});
-      showTopic(topics[0],0);backdrop.appendChild(panel);document.body.appendChild(backdrop);close.focus();
+      const initial=topics.findIndex(function(t){return t.name===topicName;});showTopic(topics[initial>=0?initial:0],initial>=0?initial:0);backdrop.appendChild(panel);document.body.appendChild(backdrop);close.focus();
     };
     document.body.appendChild(btn);
+    // Un solo aiuto discreto per area, mai sui singoli biglietti.
+    const placements=[
+      ['#view-cassa > h1.page-title','Vendita','Aiuto cassa'],
+      ['#view-magazzino > h1.page-title','Magazzino','Aiuto magazzino'],
+      ['.register-panel > h2','Storico','?'],
+      ['#view-cassa .panel h2','Riscossione','?']
+    ];
+    placements.forEach(function(p){
+      const heading=document.querySelector(p[0]);if(!heading||heading.querySelector('.gv-section-help'))return;
+      const help=document.createElement('button');help.type='button';help.className='gv-section-help';help.textContent='?';help.title=p[2]+' — apri istruzioni';
+      help.setAttribute('aria-label',p[2]);
+      help.style.cssText='margin-left:9px;vertical-align:middle;border:1px solid #9aafc4;border-radius:50%;width:25px;height:25px;line-height:22px;background:#f0f5fa;color:#123c65;font:700 14px Arial,sans-serif;cursor:pointer';
+      help.onclick=function(e){e.preventDefault();e.stopPropagation();openHelp(p[1]);};
+      heading.appendChild(help);
+    });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
