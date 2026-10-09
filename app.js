@@ -236,17 +236,44 @@
 
   // V5: ogni movimento e confermato dal database prima di modificare lo stato visibile.
   var gvMutationBusy=false;
+  // Non inviare mai movimenti quando manca una sessione autenticata.
+  async function gvSessioneValida(forzaRinnovo){
+    var sessione=await sbClient.auth.getSession();
+    if(sessione.error)throw sessione.error;
+    var session=sessione.data&&sessione.data.session;
+    if(!session){throw new Error('Sessione scaduta: effettua nuovamente il login');}
+    var scade=Number(session.expires_at||0)*1000;
+    if(forzaRinnovo || (scade && scade-Date.now()<120000)){
+      var rinnovo=await sbClient.auth.refreshSession();
+      if(rinnovo.error||!rinnovo.data||!rinnovo.data.session){
+        throw rinnovo.error||new Error('Sessione scaduta: effettua nuovamente il login');
+      }
+    }
+  }
+  function gvErroreAutenticazione(e){
+    var status=Number(e&&(e.status||e.code));
+    return status===401 || status===403 || /jwt expired|invalid jwt|permission denied for function|not authenticated/i.test(cloudError(e));
+  }
   async function gvRegistra(tipo,nome,importo,note){
     if(gvMutationBusy || !syncReady){showToast('Attendi il cloud');return false;}
     gvMutationBusy=true;
     try{
+      await gvSessioneValida(false);
+      // ID invariato in caso di secondo tentativo: il server può riconoscere lo stesso movimento.
       var args={p_sede:sedeId(),p_id:uid()+uid(),p_tipo:tipo,p_gioco:nome||'',p_importo:importo||0,p_note:note||''};
       var r=await sbClient.rpc('gv_registra_movimento',args);
+      if(r.error && gvErroreAutenticazione(r.error)){
+        await gvSessioneValida(true);
+        r=await sbClient.rpc('gv_registra_movimento',args);
+      }
       if(r.error)throw r.error;
       await sbPull();
       return true;
-    }catch(e){showToast('Operazione NON registrata: '+cloudError(e));console.error(e);return false;}
-    finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
+    }catch(e){
+      showToast('Operazione NON confermata: '+cloudError(e));
+      console.error(e);
+      return false;
+    }finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
   async function vendiUnaScheda(nome){
     if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');}
