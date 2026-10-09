@@ -270,7 +270,7 @@
 
   // ---------- Chiusura giornaliera ----------
   var TURNI = ["mattina", "pomeriggio", "sera"];
-  var TURNO_LABEL = { mattina: "Mattina", pomeriggio: "Pomeriggio", sera: "Sera" };
+  var TURNO_LABEL = { giornata: "Giornata (backup)", mattina: "Mattina", pomeriggio: "Pomeriggio", sera: "Sera" };
 
   function getTurno(ora){
     if(!ora) return "mattina"; // operazioni vecchie senza orario registrato
@@ -354,7 +354,7 @@
     var rows = [];
     dateKeys.forEach(function(d){
       var dayData = days[d];
-      TURNI.forEach(function(t){
+      (dayData && dayData.giornata ? ["giornata"] : TURNI).forEach(function(t){
         var r = dayData[t];
         if(!r || r.numOperazioni === 0) return;
         rows.push(Object.assign({ inCorso: dayData.inCorso }, r));
@@ -532,7 +532,7 @@
 
       var storicoRows = [];
       Object.keys(archivio).sort().forEach(function(d){
-        TURNI.forEach(function(t){
+        (archivio[d] && archivio[d].giornata ? ["giornata"] : TURNI).forEach(function(t){
           var r = archivio[d][t];
           if(!r || r.numOperazioni === 0) return;
           storicoRows.push({ Giorno: d, Turno: TURNO_LABEL[t], Pezzi: r.pezzi, Incasso: r.incassoVendite, PagamentiVincite: r.pagamenti, CassaNetta: r.cassaNettaGiorno });
