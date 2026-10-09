@@ -274,11 +274,14 @@
       return false;
     }finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
-  // Richiudi il pannello dettagli solo dopo un'operazione confermata dal cloud.
+  // Chiudi il pannello vincita solo dopo una conferma cloud; il timer
+  // viene annullato se l'operatore riapre il pannello nel frattempo.
+  var tileCloseTimers=Object.create(null);
   function closeTileDetailsAfterSuccess(nome){
-    setTimeout(function(){
-      var tiles=document.querySelectorAll('#tilesGrid .tile');
-      tiles.forEach(function(tile){
+    if(tileCloseTimers[nome])clearTimeout(tileCloseTimers[nome]);
+    tileCloseTimers[nome]=setTimeout(function(){
+      delete tileCloseTimers[nome];
+      document.querySelectorAll('#tilesGrid .tile').forEach(function(tile){
         var btn=tile.querySelector('.tile-details-toggle');
         if(!btn || btn.dataset.nome!==nome)return;
         var details=tile.querySelector('.tile-expanded');
@@ -825,20 +828,12 @@
       var detailsTile = detailsBtn.closest('.tile');
       var details = detailsTile && detailsTile.querySelector('.tile-expanded');
       if(!details) return;
+      if(tileCloseTimers[detailsBtn.dataset.nome]){
+        clearTimeout(tileCloseTimers[detailsBtn.dataset.nome]);
+        delete tileCloseTimers[detailsBtn.dataset.nome];
+      }
       details.hidden = false;
       detailsBtn.setAttribute('aria-expanded', 'true');
-      return;
-    }
-    var modeBtn = e.target.closest('.tile-mode-btn');
-    if(modeBtn){
-      var tile = modeBtn.closest('.tile');
-      if(!tile) return;
-      tile.querySelectorAll('.tile-mode-btn').forEach(function(b){ b.classList.toggle('active', b === modeBtn); });
-      var venditaPanel = tile.querySelector('.tile-vendita-panel');
-      var vincitaPanel = tile.querySelector('.tile-vincita-panel');
-      var isVincita = modeBtn.dataset.mode === 'vincita';
-      venditaPanel.hidden = isVincita;
-      vincitaPanel.hidden = !isVincita;
       return;
     }
     var sellBtn = e.target.closest('.tile-sell-btn');
