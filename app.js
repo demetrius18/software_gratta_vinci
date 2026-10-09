@@ -445,7 +445,8 @@
   }
 
   function importBackupFromFile(){
-    document.getElementById('importFileInput').click();
+    showToast('Importazione cloud: usa Configurazione iniziale con account Admin. Non importare backup nella cassa.');
+    if(window.confirm('Aprire la pagina di configurazione iniziale? Solo per sedi vuote e account Admin.')) location.href='configurazione-iniziale.html';
   }
 
   // ---------- Cloud multisede: solo progetto nuovo, RLS e auth obbligatori ----------
@@ -849,32 +850,39 @@
   });
 
   async function addGame(){
-    showToast('V5: modifica catalogo sospesa finche non e disponibile una procedura cloud sicura');return;
-
     if(locked){ showToast('Sblocca la configurazione per aggiungere un gioco'); return; }
+    if(!syncReady || gvMutationBusy){ showToast('Attendi la sincronizzazione cloud'); return; }
     var nome = window.prompt('Nome del nuovo Gratta e Vinci', '');
     if(nome === null) return;
     nome = nome.trim();
-    if(!nome){ showToast('Inserisci il nome del Gratta e Vinci'); return; }
-    if(findGame(nome)){ showToast('Esiste già un Gratta e Vinci con questo nome'); return; }
-
-    var prezzoText = window.prompt('Prezzo del biglietto (€)', '10');
+    if(!nome || nome.length > 120){ showToast('Inserisci un nome valido (max 120 caratteri)'); return; }
+    if(findGame(nome)){ showToast('Questo Gratta e Vinci esiste già'); return; }
+    var prezzoText = window.prompt('Prezzo del biglietto (€)', '3');
     if(prezzoText === null) return;
     var prezzo = Number(String(prezzoText).replace(',', '.'));
-    if(!isFinite(prezzo) || prezzo <= 0){ showToast('Prezzo non valido'); return; }
-
-    var giacenzaText = window.prompt('Giacenza iniziale (pezzi)', '0');
-    if(giacenzaText === null) return;
-    var giacenza = Number(String(giacenzaText).replace(',', '.'));
-    if(!isFinite(giacenza) || giacenza < 0 || Math.floor(giacenza) !== giacenza){ showToast('Giacenza non valida'); return; }
-
-    state.games.push({ nome:nome, prezzo:prezzo, giacenza:giacenza, color:'#2E4A73', immagine:null });
-    await saveGames();
-    renderTiles();
-    renderRiepilogo();
-    showToast('Nuovo Gratta e Vinci aggiunto');
+    if(!Number.isFinite(prezzo) || prezzo <= 0 || Math.round(prezzo*100)!==prezzo*100){ showToast('Prezzo non valido'); return; }
+    var qtyText = window.prompt('Giacenza iniziale (pezzi)', '0');
+    if(qtyText === null) return;
+    var giacenza = Number(qtyText);
+    if(!Number.isSafeInteger(giacenza) || giacenza < 0){ showToast('Giacenza non valida'); return; }
+    if(!window.confirm('Aggiungere '+nome+' a '+fmtEUR(prezzo)+' € con '+giacenza+' biglietti alla sede corrente?'))return;
+    gvMutationBusy=true;
+    try{
+      await gvSessioneValida(false);
+      var {data:existing,error:checkError}=await sbClient.from('gv_games').select('nome').eq('sede_id',sedeId());
+      if(checkError)throw checkError;
+      if((existing||[]).some(function(g){return String(g.nome).trim().toLocaleLowerCase('it')===nome.toLocaleLowerCase('it');}))
+        throw new Error('Questo modello è già presente nel cloud');
+      var {error}=await sbClient.from('gv_games').insert({sede_id:sedeId(),nome:nome,prezzo:prezzo,giacenza:giacenza,colore:'#2E4A73',ordine:0});
+      if(error)throw error;
+      showToast('Gratta e Vinci aggiunto nel cloud');
+    }catch(e){
+      showToast('Aggiunta non confermata: '+cloudError(e)+'. Verifica il magazzino prima di riprovare.');
+      return;
+    }finally{gvMutationBusy=false;}
+    try{await sbPull();}catch(e){showToast('Modello salvato; aggiornamento schermata non riuscito. Ricarica la pagina.');}
   }
-
+  
   async function removeGame(nome){
     showToast('V5: modifica catalogo sospesa finche non e disponibile una procedura cloud sicura');return;
 
