@@ -171,17 +171,10 @@
         "<div class='tile-stock-line'>GIACENZA <strong>" + available + "</strong></div>" +
         "<div class='tile-quick-sale'>" +
           "<button type='button' class='tile-sell-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">VENDI 1 BIGLIETTO</button>" +
-          "<button type='button' class='tile-details-toggle' aria-expanded='false' data-nome='" + g.nome + "'>VENDITA</button>" +
+          "<button type='button' class='tile-details-toggle' aria-expanded='false' data-nome='" + g.nome + "'>VINCITA</button>" +
         "</div>" +
         "<div class='tile-expanded' hidden>" +
-          "<div class='tile-tabs'>" +
-            "<button type='button' class='tile-mode-btn active' data-mode='vendita' data-nome='" + g.nome + "'>VENDITA</button>" +
-            "<button type='button' class='tile-mode-btn' data-mode='vincita' data-nome='" + g.nome + "'>VINCITA</button>" +
-          "</div>" +
-          "<div class='tile-vendita-panel'>" +
-            "<button type='button' class='tile-sell-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">VENDI 1 BIGLIETTO</button>" +
-          "</div>" +
-        "<div class='tile-vincita-panel' hidden>" +
+          "<div class='tile-vincita-panel'>" +
           "<button type='button' class='tile-win-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">REGISTRA VINCITA · SCALA 1 BIGLIETTO</button>" +
           "<div class='payout-divider'></div>" +
           "<div class='payout-title'>RISCOSSIONE VINCITA</div>" +
@@ -289,7 +282,7 @@
         var btn=tile.querySelector('.tile-details-toggle');
         if(!btn || btn.dataset.nome!==nome)return;
         var details=tile.querySelector('.tile-expanded');
-        if(details){details.hidden=true;btn.setAttribute('aria-expanded','false');btn.textContent='VENDITA';}
+        if(details){details.hidden=true;btn.setAttribute('aria-expanded','false');btn.textContent='VINCITA';}
       });
     },2500);
   }
