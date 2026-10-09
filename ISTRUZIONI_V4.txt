@@ -1,0 +1,21 @@
+GRATTA E VINCI V4 - CHIUSURA GIORNALIERA UNICA
+
+1. Esegui il backup del nuovo progetto Supabase e dei dati di ciascuna sede.
+2. Nel SQL Editor del progetto kwidkukwvnqozunkiogp esegui 01_chiusure_giornaliere.sql una sola volta.
+3. Pubblica il contenuto di questo ZIP sul ramo GitHub di sviluppo, NON su main.
+4. Apri admin.html -> Chiusura giornaliera. Seleziona sede/data e verifica i totali.
+5. Premi Conferma chiusura; verifica che una seconda chiusura non sovrascriva i valori.
+6. Registra una rettifica di prova, verifica motivo, operatore, importo e netto rettificato.
+7. Prova da un altro utente non admin: la pagina non deve consentire chiusure.
+8. Controlla tutte le funzioni esistenti prima di pubblicare su main.
+
+IMPORTANTE:
+- La chiusura V4 e' separata dal vecchio riepilogo provvisorio e non elimina alcun dato.
+- Le rettifiche V4 sono INSERITE ESPLICITAMENTE dall'Admin; NON sono create in automatico
+  quando una cassa registra un'operazione dopo la chiusura.
+- Per evitare doppio conteggio, ogni operazione tardiva va riconciliata manualmente.
+- La sincronizzazione multi-dispositivo e le operazioni atomiche sulle giacenze NON sono
+  ancora state risolte: non usare due casse simultaneamente nella stessa sede.
+- Le funzioni SQL consentono la chiusura anche con dati non ancora sincronizzati:
+  assicurarsi che tutte le casse abbiano completato il caricamento prima di chiudere.
+- Le chiusure e rettifiche sono append-only via RPC per gli utenti admin.
