@@ -215,6 +215,23 @@
   .tile-details-toggle:hover{background:#e7ebe5;}
   .tile-details-toggle[aria-expanded="true"]{background:#27362e;color:#fff;border-color:#27362e;}
   .tile-expanded[hidden]{display:none!important;}
+  /* Vincita: finestra flottante indipendente dalla griglia delle schede */
+  .gv-win-overlay[hidden]{display:none!important;}
+  .gv-win-overlay{position:fixed;inset:0;z-index:12000;background:rgba(12,22,17,.60);display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box;}
+  .gv-win-dialog{width:min(100%,450px);max-height:calc(100dvh - 36px);overflow:auto;background:#fff;border-radius:20px;box-shadow:0 20px 70px rgba(0,0,0,.28);padding:18px;box-sizing:border-box;}
+  .gv-win-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;border-bottom:1px solid #e6e9e5;padding-bottom:13px;}
+  .gv-win-kicker{font-size:10px;font-weight:800;letter-spacing:.12em;color:#8a6c0f;}
+  .gv-win-head h2{font-size:21px;line-height:1.25;margin:5px 0 0;color:#1c2922;overflow-wrap:anywhere;}
+  .gv-win-close{border:1px solid #d8ddd7;border-radius:50%;width:36px;height:36px;background:#f5f6f3;font-size:24px;cursor:pointer;flex:none;line-height:1;}
+  .gv-win-content .tile-vincita-panel{padding:18px 0 5px;}
+  .gv-win-content .tile-win-btn{border-radius:999px;min-height:52px;font-size:13px;padding:12px;}
+  .gv-win-content .payout-title{font-size:13px;text-align:left;margin:12px 0;}
+  .gv-win-content .payout-grid{gap:8px;}
+  .gv-win-content .payout-btn{border-radius:999px;min-height:44px;font-size:15px;}
+  .gv-win-content .other-payout-btn{border-radius:999px;min-height:46px;margin-top:12px;font-size:13px;}
+  .gv-win-hint{font-size:11px;text-align:center;color:#77817b;margin-top:10px;}
+  @media(max-width:480px){.gv-win-overlay{padding:10px;}.gv-win-dialog{padding:15px;border-radius:16px;max-height:calc(100dvh - 20px);}}
+
   .tile-tabs{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #222;}
   .tile-mode-btn{
     border:0;border-right:1px solid #222;background:#fff;color:#174F1C;
