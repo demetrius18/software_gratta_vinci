@@ -169,13 +169,18 @@
         "</div>" +
         "<div class='tile-product-name'>" + g.nome + "</div>" +
         "<div class='tile-stock-line'>GIACENZA <strong>" + available + "</strong></div>" +
-        "<div class='tile-tabs'>" +
-          "<button type='button' class='tile-mode-btn active' data-mode='vendita' data-nome='" + g.nome + "'>VENDITA</button>" +
-          "<button type='button' class='tile-mode-btn' data-mode='vincita' data-nome='" + g.nome + "'>VINCITA</button>" +
-        "</div>" +
-        "<div class='tile-vendita-panel'>" +
+        "<div class='tile-quick-sale'>" +
           "<button type='button' class='tile-sell-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">VENDI 1 BIGLIETTO</button>" +
+          "<button type='button' class='tile-details-toggle' aria-expanded='false' data-nome='" + g.nome + "'>VENDITA</button>" +
         "</div>" +
+        "<div class='tile-expanded' hidden>" +
+          "<div class='tile-tabs'>" +
+            "<button type='button' class='tile-mode-btn active' data-mode='vendita' data-nome='" + g.nome + "'>VENDITA</button>" +
+            "<button type='button' class='tile-mode-btn' data-mode='vincita' data-nome='" + g.nome + "'>VINCITA</button>" +
+          "</div>" +
+          "<div class='tile-vendita-panel'>" +
+            "<button type='button' class='tile-sell-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">VENDI 1 BIGLIETTO</button>" +
+          "</div>" +
         "<div class='tile-vincita-panel' hidden>" +
           "<button type='button' class='tile-win-btn' data-nome='" + g.nome + "' " + (soldOut ? "disabled" : "") + ">REGISTRA VINCITA · SCALA 1 BIGLIETTO</button>" +
           "<div class='payout-divider'></div>" +
@@ -186,6 +191,7 @@
             }).join('') +
           "</div>" +
           "<button type='button' class='other-payout-btn' data-nome='" + g.nome + "'>ALTRO IMPORTO</button>" +
+        "</div>" +
         "</div>" +
         "<div class='tile-admin'>" +
           "<button type='button' class='tile-imgedit' data-nome='" + g.nome + "' title='Carica foto reale'>🖼</button>" +
@@ -807,6 +813,16 @@
     var removeBtn = e.target.closest('.tile-imgremove');
     if(removeBtn){
       setGameImage(removeBtn.dataset.nome, null);
+      return;
+    }
+    var detailsBtn = e.target.closest('.tile-details-toggle');
+    if(detailsBtn){
+      var detailsTile = detailsBtn.closest('.tile');
+      var details = detailsTile && detailsTile.querySelector('.tile-expanded');
+      if(!details) return;
+      details.hidden = !details.hidden;
+      detailsBtn.setAttribute('aria-expanded', String(!details.hidden));
+      detailsBtn.textContent = details.hidden ? 'VENDITA' : 'CHIUDI';
       return;
     }
     var modeBtn = e.target.closest('.tile-mode-btn');
