@@ -655,7 +655,7 @@
   }
 
   function sortedOperations(){
-    return state.operations.slice().sort(function(a,b){ return (b.data + (b.ora||"") + b.id) > (a.data + (a.ora||"") + a.id) ? 1 : -1; });
+    return state.operations.slice().sort(function(a,b){ var d=String(b.data||"").localeCompare(String(a.data||"")); if(d)return d; var ah=!!a.ora,bh=!!b.ora; if(ah!==bh)return ah?-1:1; if(ah&&bh){var t=String(b.ora).localeCompare(String(a.ora));if(t)return t;} return String(b.id||"").localeCompare(String(a.id||"")); });
   }
 
   function fmtDateTime(op){
