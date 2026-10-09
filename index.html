@@ -698,6 +698,39 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="gv-config.js"></script>
+<script>
+/* Guida operatore indipendente dal caricamento dell'applicazione principale. */
+(function(){
+  const topics={
+    'Vendita':'Seleziona il biglietto venduto e attendi la conferma del cloud. Non ripetere il comando mentre è in corso.',
+    'Vincita':'Registra il biglietto vincente per scalarlo dal magazzino. La vincita non equivale al pagamento.',
+    'Riscossione':'Inserisci la somma pagata e attendi la conferma. Verifica lo Storico in caso di dubbio.',
+    'Magazzino':'Controlla le giacenze e, in caso di differenze, consulta lo Storico prima di correggerle.',
+    'Storico':'Consulta i movimenti registrati. Se un’operazione non è confermata, controlla qui prima di ripeterla.',
+    'Connessione e sessione':'La sessione viene rinnovata automaticamente quando possibile. In caso di errore non confermato, controlla lo Storico e avvisa il responsabile.'
+  };
+  function init(){
+    if(document.getElementById('gvHelpLauncher'))return;
+    const btn=document.createElement('button');btn.id='gvHelpLauncher';btn.type='button';btn.textContent='? Guida operatore';
+    btn.style.cssText='position:fixed!important;bottom:18px!important;right:18px!important;z-index:2147483640!important;display:block!important;visibility:visible!important;opacity:1!important;background:#123c65!important;color:white!important;border:2px solid #fff!important;border-radius:28px!important;padding:13px 18px!important;font:700 14px Arial,sans-serif!important;box-shadow:0 3px 18px #0008!important;cursor:pointer!important';
+    btn.onclick=function(){
+      const old=document.getElementById('gvHelpStandalone');if(old){old.remove();return;}
+      const backdrop=document.createElement('div');backdrop.id='gvHelpStandalone';backdrop.style.cssText='position:fixed;inset:0;z-index:2147483641;background:#0009;display:flex;align-items:center;justify-content:center;padding:16px';
+      const panel=document.createElement('div');panel.style.cssText='width:min(440px,100%);max-height:85vh;overflow:auto;background:white;color:#152238;padding:20px;border-radius:14px;font:15px/1.5 Arial,sans-serif';
+      const h=document.createElement('h2');h.textContent='Guida operatore';panel.appendChild(h);
+      const detail=document.createElement('p');detail.textContent='Scegli un argomento per visualizzare le istruzioni.';panel.appendChild(detail);
+      Object.keys(topics).forEach(function(name){
+        const item=document.createElement('button');item.type='button';item.textContent='? '+name;item.style.cssText='display:block;width:100%;padding:10px;margin:4px 0;text-align:left;background:#edf2f8;color:#152238;border:0;border-radius:6px;cursor:pointer';
+        item.onclick=function(){detail.textContent=topics[name];};panel.appendChild(item);
+      });
+      const close=document.createElement('button');close.type='button';close.textContent='Chiudi';close.style.cssText='width:100%;padding:12px;margin-top:12px;background:#123c65;color:white;border:0;border-radius:6px;cursor:pointer';
+      close.onclick=function(){backdrop.remove();};panel.appendChild(close);backdrop.appendChild(panel);document.body.appendChild(backdrop);
+    };
+    document.body.appendChild(btn);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
 <script src="gv-auth.js?v=63d80892"></script>
 </body>
 </html>
