@@ -149,6 +149,11 @@
 
   function buildTiles(){
     var grid = document.getElementById('tilesGrid');
+    // Il cloud aggiorna le schede periodicamente: conserva i pannelli Vincita aperti.
+    var expandedNames = new Set(Array.from(grid.querySelectorAll('.tile')).filter(function(tile){
+      var panel=tile.querySelector('.tile-expanded');
+      return panel && !panel.hidden;
+    }).map(function(tile){return tile.dataset.nome;}));
     grid.innerHTML = "";
     getDisplayGames().forEach(function(g){
       var available = Number(g.giacenza) || 0;
@@ -190,6 +195,11 @@
           "<button type='button' class='tile-imgedit' data-nome='" + g.nome + "' title='Carica foto reale'>🖼</button>" +
           (g.immagine ? "<button type='button' class='tile-imgremove' data-nome='" + g.nome + "' title='Rimuovi foto'>×</button>" : "") +
         "</div>";
+      if(expandedNames.has(g.nome)){
+        var panel=tile.querySelector('.tile-expanded');
+        var toggle=tile.querySelector('.tile-details-toggle');
+        if(panel && toggle){panel.hidden=false;toggle.setAttribute('aria-expanded','true');}
+      }
       grid.appendChild(tile);
     });
   }
