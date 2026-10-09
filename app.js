@@ -270,7 +270,7 @@
       await sbPull();
       return true;
     }catch(e){
-      showToast('Operazione NON confermata: '+cloudError(e));
+      showToast('Operazione NON confermata: '+cloudError(e));gvHelpDialog('Operazione NON confermata','Non è stato possibile confermare la registrazione sul cloud. Prima di ripetere l’operazione, controlla nello Storico se il movimento è già presente. Se non riesci a verificarlo, contatta il responsabile.',true,'Tipo: '+tipo+' | Gioco: '+(nome||'non specificato')+' | Importo: '+(Number(importo)||0)+' € | Errore: '+cloudError(e));
       console.error(e);
       return false;
     }finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
@@ -730,6 +730,44 @@
     finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
 
+  // Aiuti condivisi tra tutti gli operatori della sede: nessun flag per utente.
+  var gvHelpTopics={
+    vendita:['Vendita','Seleziona il Gratta e Vinci venduto e premi Vendita. Attendi la conferma del cloud prima di consegnare un altro biglietto. La giacenza si aggiorna dopo la conferma.'],
+    vincita:['Vincita','Usa Vincita per registrare un biglietto vincente e scalarlo dal magazzino. Questa operazione non equivale al pagamento della vincita.'],
+    riscossione:['Riscossione','Inserisci l’importo effettivamente pagato al cliente e conferma. Attendi il messaggio di registrazione prima di eseguire un nuovo pagamento.'],
+    magazzino:['Magazzino','Controlla le giacenze prima di iniziare il turno e dopo i movimenti. Se un numero non coincide, verifica lo storico prima di apportare correzioni.'],
+    storico:['Storico','Consulta le operazioni registrate per verificare vendite, vincite e riscossioni. Se una richiesta non è stata confermata, controlla qui prima di ripeterla.'],
+    cloud:['Connessione e sessione','Il gestionale verifica la sessione e prova a rinnovarla automaticamente. Se una registrazione non è confermata, non ripetere subito il comando: controlla lo storico e, se necessario, contatta il responsabile.']
+  };
+  function gvHelpDialog(titolo,contenuto,critico,extra){
+    var previous=document.getElementById('gvHelpOverlay');if(previous)previous.remove();
+    var overlay=document.createElement('div');overlay.id='gvHelpOverlay';
+    overlay.setAttribute('role','presentation');
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(10,15,24,.74);z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:16px';
+    var dialog=document.createElement('div');dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label',titolo);
+    dialog.style.cssText='width:min(100%,440px);max-height:85vh;overflow:auto;background:#fff;color:#152238;border-radius:14px;padding:22px;box-shadow:0 14px 50px #0006;font:15px/1.55 Arial,sans-serif';
+    var heading=document.createElement('h2');heading.textContent=titolo;heading.style.cssText='font-size:20px;margin:0 0 12px;color:'+(critico?'#a61e25':'#152238');dialog.appendChild(heading);
+    var p=document.createElement('p');p.textContent=contenuto;p.style.cssText='white-space:pre-line;margin:0 0 14px';dialog.appendChild(p);
+    if(extra){var detail=document.createElement('p');detail.textContent=extra;detail.style.cssText='background:#f1f4f8;border-radius:8px;padding:10px;overflow-wrap:anywhere';dialog.appendChild(detail);}
+    var close=document.createElement('button');close.type='button';close.textContent=critico?'Ho capito':'Chiudi';close.style.cssText='width:100%;padding:12px;border:0;border-radius:8px;background:#174d81;color:#fff;font-size:15px;cursor:pointer';
+    close.addEventListener('click',function(){overlay.remove();});dialog.appendChild(close);overlay.appendChild(dialog);document.body.appendChild(overlay);close.focus();
+    if(!critico){overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});}
+  }
+  function gvOpenHelp(topic){var t=gvHelpTopics[topic];if(t)gvHelpDialog(t[0],t[1],false);}
+  function gvInstallHelp(){
+    if(document.getElementById('gvHelpLauncher'))return;
+    var btn=document.createElement('button');btn.id='gvHelpLauncher';btn.type='button';btn.textContent='? Guida operatore';btn.title='Aiuti per tutti gli operatori';
+    btn.style.cssText='position:fixed;right:14px;bottom:14px;z-index:2147483600;padding:10px 14px;border-radius:24px;border:1px solid #d6e0ea;background:#123c65;color:#fff;box-shadow:0 3px 15px #0005;cursor:pointer;font:600 13px Arial,sans-serif';
+    btn.addEventListener('click',function(){
+      var old=document.getElementById('gvHelpMenu');if(old){old.remove();return;}
+      var menu=document.createElement('div');menu.id='gvHelpMenu';menu.style.cssText='position:fixed;right:14px;bottom:64px;z-index:2147483601;width:min(320px,calc(100vw - 28px));max-height:70vh;overflow:auto;background:#fff;color:#152238;border-radius:12px;padding:12px;box-shadow:0 5px 30px #0006';
+      Object.keys(gvHelpTopics).forEach(function(key){
+        var item=document.createElement('button');item.type='button';item.textContent='? '+gvHelpTopics[key][0];item.style.cssText='display:block;width:100%;text-align:left;padding:11px;margin:2px 0;border:0;border-radius:6px;background:#f1f4f8;color:#152238;cursor:pointer';
+        item.addEventListener('click',function(){menu.remove();gvOpenHelp(key);});menu.appendChild(item);
+      });document.body.appendChild(menu);
+    });document.body.appendChild(btn);
+  }
+  gvInstallHelp();
   function showToast(msg){
     var t = document.getElementById('toast');
     t.textContent = msg;
