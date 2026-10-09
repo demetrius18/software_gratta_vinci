@@ -281,16 +281,28 @@
       return false;
     }finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
+  // Richiudi il pannello dettagli solo dopo un'operazione confermata dal cloud.
+  function closeTileDetailsAfterSuccess(nome){
+    setTimeout(function(){
+      var tiles=document.querySelectorAll('#tilesGrid .tile');
+      tiles.forEach(function(tile){
+        var btn=tile.querySelector('.tile-details-toggle');
+        if(!btn || btn.dataset.nome!==nome)return;
+        var details=tile.querySelector('.tile-expanded');
+        if(details){details.hidden=true;btn.setAttribute('aria-expanded','false');btn.textContent='VENDITA';}
+      });
+    },2500);
+  }
   async function vendiUnaScheda(nome){
-    if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');}
+    if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');closeTileDetailsAfterSuccess(nome);}
   }
   async function registraRiscossione(nome,importo){
     importo=Number(importo)||0;
     if(importo<=0)return;
-    if(await gvRegistra('RISCOSSIONE',nome,importo,'Riscossione vincita')){suonoPagamento();showToast('Riscossione confermata');}
+    if(await gvRegistra('RISCOSSIONE',nome,importo,'Riscossione vincita')){suonoPagamento();showToast('Riscossione confermata');closeTileDetailsAfterSuccess(nome);}
   }
   async function dannoSchedaVincita(nome){
-    if(await gvRegistra('VINCITA',nome,0,'Biglietto vincente')){suonoVincita();showToast('Vincita confermata');}
+    if(await gvRegistra('VINCITA',nome,0,'Biglietto vincente')){suonoVincita();showToast('Vincita confermata');closeTileDetailsAfterSuccess(nome);}
   }
   async function pagaContantiVincita(){
     var input=document.getElementById('quickContantiInput');if(!input)return;
@@ -820,9 +832,8 @@
       var detailsTile = detailsBtn.closest('.tile');
       var details = detailsTile && detailsTile.querySelector('.tile-expanded');
       if(!details) return;
-      details.hidden = !details.hidden;
-      detailsBtn.setAttribute('aria-expanded', String(!details.hidden));
-      detailsBtn.textContent = details.hidden ? 'VENDITA' : 'CHIUDI';
+      details.hidden = false;
+      detailsBtn.setAttribute('aria-expanded', 'true');
       return;
     }
     var modeBtn = e.target.closest('.tile-mode-btn');
