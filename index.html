@@ -209,6 +209,12 @@
     letter-spacing:.03em;
   }
   .tile-stock-line strong{font-family:'IBM Plex Mono',monospace;color:#1C2321;font-size:12px;}
+  .tile-quick-sale{display:flex;flex-direction:column;gap:9px;padding:10px 9px 12px;}
+  .tile-quick-sale .tile-sell-btn{border-radius:999px;min-height:45px;}
+  .tile-details-toggle{width:100%;min-height:45px;border:1px solid #d5d9d4;border-radius:999px;background:#f4f5f2;color:#1c2822;font-size:14px;font-weight:900;cursor:pointer;}
+  .tile-details-toggle:hover{background:#e7ebe5;}
+  .tile-details-toggle[aria-expanded="true"]{background:#27362e;color:#fff;border-color:#27362e;}
+  .tile-expanded[hidden]{display:none!important;}
   .tile-tabs{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #222;}
   .tile-mode-btn{
     border:0;border-right:1px solid #222;background:#fff;color:#174F1C;
