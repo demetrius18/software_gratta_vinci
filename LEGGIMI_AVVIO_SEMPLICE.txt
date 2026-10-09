@@ -1,0 +1,28 @@
+GRATTA E VINCI — AVVIO SEMPLICE (CONFIGURAZIONE INIZIALE)
+
+1. Carica tutti i file di questa cartella sul ramo GitHub di TEST.
+2. Apri login.html e accedi come amministratore.
+3. Seleziona la sede che vuoi configurare.
+4. Apri configurazione-iniziale.html.
+5. Se la sede è vuota, scegli:
+   A) Aggiunta manuale dei modelli e delle giacenze;
+   B) Importazione del vecchio backup JSON per modelli e giacenze.
+6. Controlla i dati in anteprima, inserisci il fondo e premi Inizializza.
+7. Apri index.html e carica i dati da Supabase.
+
+PROTEZIONI:
+- Non sovrascrive una sede che ha già modelli, operazioni o archivio.
+- Non importa lo storico operazioni (per evitare duplicazioni contabili).
+- Non cancella né modifica le sedi già esistenti.
+- Accesso inizializzazione riservato agli Admin.
+- Le immagini nel backup possono essere grandi: limite file 25 MB.
+
+ATTENZIONE:
+Questo è un assistente di configurazione, non una certificazione della V5.1.
+Le fasi 1–3 (transazioni atomiche, sincronizzazione, chiusure) richiedono
+ancora l'installazione/collaudo delle migrazioni SQL in ambiente di test.
+Non eseguire gli script SQL non verificati sul database operativo.
+Il setup NON è una transazione unica: se il fondo non viene salvato dopo
+l'inserimento dei modelli, NON ripetere l'importazione. Contatta Admin.
+Per importare anche lo storico dal vecchio gestionale serve una migrazione
+separata con riconciliazione di saldi e giacenze.

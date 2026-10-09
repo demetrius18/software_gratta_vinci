@@ -1,0 +1,20 @@
+PROVA BOLOGNA — BACKUP DEL 09/10/2026
+
+1. Usa esclusivamente un ambiente di TEST e non pubblicare su main.
+2. Carica i file su GitHub Pages nel ramo di prova (o su un server HTTP locale).
+3. Apri login.html, accedi con l’account admin e seleziona BOLOGNA.
+4. Apri configurazione-iniziale.html.
+5. Verifica che la sede risulti VUOTA. Se non è vuota, FERMATI.
+6. Seleziona il file BACKUP_BOLOGNA_2026-10-09.json incluso nel pacchetto.
+7. Controlla i 6 modelli e le giacenze, conferma e inizializza.
+8. Apri index.html, verifica i 6 modelli e i saldi.
+
+IL BACKUP CONTIENE 169 OPERAZIONI E 10 GIORNATE ARCHIVIATE.
+Il setup iniziale importa SOLO catalogo, giacenze e fondo iniziale (0 EUR),
+NON importa lo storico operazioni né le chiusure. Non registrare di nuovo
+le 169 operazioni, altrimenti si rischia di duplicare i movimenti.
+
+Questa procedura non scrive sul database automaticamente: il salvataggio
+avviene solo quando l'amministratore conferma dal browser.
+La versione V5.1 necessita ancora di collaudo e verifica migrazioni SQL.
+Non lanciare SQL su produzione senza prima verificarlo.
