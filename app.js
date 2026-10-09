@@ -264,7 +264,7 @@
     return status===401 || status===403 || /jwt expired|invalid jwt|permission denied for function|not authenticated/i.test(cloudError(e));
   }
   async function gvRegistra(tipo,nome,importo,note){
-    if(gvMutationBusy || !syncReady){showToast('Attendi il cloud');return false;}
+    if(gvMutationBusy || !syncReady){showToast('Attendi il cloud');gvWinOperationFailed();return false;}
     gvMutationBusy=true;
     try{
       await gvSessioneValida(false);
@@ -281,30 +281,80 @@
     }catch(e){
       showToast('Operazione NON confermata: '+cloudError(e));gvHelpDialog('Operazione NON confermata','Non è stato possibile confermare la registrazione sul cloud. Prima di ripetere l’operazione, controlla nello Storico se il movimento è già presente. Se non riesci a verificarlo, contatta il responsabile.',true,'Tipo: '+tipo+' | Gioco: '+(nome||'non specificato')+' | Importo: '+(Number(importo)||0)+' € | Errore: '+cloudError(e));
       console.error(e);
+      gvWinOperationFailed();
       return false;
     }finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
-  // Chiudi il pannello vincita solo dopo una conferma cloud; il timer
-  // viene annullato se l'operatore riapre il pannello nel frattempo.
-  var tileCloseTimers=Object.create(null);
-  function closeTileDetailsAfterSuccess(nome){
-    if(tileCloseTimers[nome])clearTimeout(tileCloseTimers[nome]);
-    tileCloseTimers[nome]=setTimeout(function(){
-      delete tileCloseTimers[nome];
-      document.querySelectorAll('#tilesGrid .tile').forEach(function(tile){
-        var btn=tile.querySelector('.tile-details-toggle');
-        if(!btn || btn.dataset.nome!==nome)return;
-        var details=tile.querySelector('.tile-expanded');
-        if(details){details.hidden=true;btn.setAttribute('aria-expanded','false');btn.textContent='VINCITA';}
+  // Pannello Vincita flottante: inattività 10s; dopo conferma cloud 2,5s.
+  var gvWinModal=null, gvWinTimer=null, gvWinPending=false, gvWinGame='';
+  function gvWinStopTimer(){if(gvWinTimer){clearTimeout(gvWinTimer);gvWinTimer=null;}}
+  function gvWinClose(){
+    gvWinStopTimer();
+    if(gvWinModal)gvWinModal.hidden=true;
+    gvWinGame='';
+    document.querySelectorAll('#tilesGrid .tile-details-toggle').forEach(function(b){b.setAttribute('aria-expanded','false');});
+  }
+  function gvWinIdleTimer(){
+    gvWinStopTimer();
+    if(!gvWinModal || gvWinModal.hidden || gvWinPending)return;
+    gvWinTimer=setTimeout(function(){if(!gvWinPending)gvWinClose();},10000);
+  }
+  function gvWinOpen(nome,tile){
+    if(!gvWinModal){
+      gvWinModal=document.createElement('div');
+      gvWinModal.id='gvWinModal';
+      gvWinModal.className='gv-win-overlay';
+      gvWinModal.hidden=true;
+      gvWinModal.innerHTML='<div class="gv-win-dialog" role="dialog" aria-modal="true" aria-labelledby="gvWinTitle"><div class="gv-win-head"><div><div class="gv-win-kicker">OPERAZIONI VINCITA</div><h2 id="gvWinTitle"></h2></div><button type="button" class="gv-win-close" aria-label="Chiudi finestra Vincita">×</button></div><div class="gv-win-content"></div><div class="gv-win-hint">La finestra si chiude dopo 10 secondi di inattività.</div></div>';
+      document.body.appendChild(gvWinModal);
+      gvWinModal.addEventListener('click',function(e){
+        if(e.target===gvWinModal || e.target.closest('.gv-win-close')){if(!gvWinPending)gvWinClose();return;}
+        var win=e.target.closest('.tile-win-btn');
+        var payout=e.target.closest('.payout-btn');
+        var other=e.target.closest('.other-payout-btn');
+        if(win && !win.disabled){gvWinPending=true;gvWinStopTimer();dannoSchedaVincita(win.dataset.nome);return;}
+        if(payout){gvWinPending=true;gvWinStopTimer();registraRiscossione(payout.dataset.nome,payout.dataset.importo);return;}
+        if(other){
+          gvWinStopTimer();
+          var value=window.prompt('Inserisci importo riscossione (€)','');
+          if(value!==null && Number(value.replace(',','.'))>0){
+            gvWinPending=true;registraRiscossione(other.dataset.nome,value.replace(',','.'));
+          }else gvWinIdleTimer();
+          return;
+        }
+        gvWinIdleTimer();
       });
-    },2500);
+      gvWinModal.addEventListener('pointerdown',function(){if(!gvWinPending)gvWinIdleTimer();});
+      gvWinModal.addEventListener('keydown',function(){if(!gvWinPending)gvWinIdleTimer();});
+      document.addEventListener('keydown',function(e){if(e.key==='Escape'&&gvWinModal&&!gvWinModal.hidden&&!gvWinPending)gvWinClose();});
+    }
+    if(gvWinPending)return;
+    gvWinGame=nome;
+    gvWinModal.querySelector('#gvWinTitle').textContent=nome;
+    var source=tile.querySelector('.tile-vincita-panel');
+    var content=gvWinModal.querySelector('.gv-win-content');
+    content.innerHTML='';
+    if(source)content.appendChild(source.cloneNode(true));
+    gvWinModal.hidden=false;
+    gvWinModal.querySelector('.gv-win-close').focus();
+    gvWinIdleTimer();
+  }
+  function closeTileDetailsAfterSuccess(nome){
+    if(!gvWinModal || gvWinModal.hidden || gvWinGame!==nome)return;
+    gvWinPending=false;
+    gvWinStopTimer();
+    gvWinTimer=setTimeout(gvWinClose,2500);
+  }
+  function gvWinOperationFailed(){
+    gvWinPending=false;
+    gvWinStopTimer(); // In caso di errore lascia aperto per leggere e verificare lo storico.
   }
   async function vendiUnaScheda(nome){
     if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');closeTileDetailsAfterSuccess(nome);}
   }
   async function registraRiscossione(nome,importo){
     importo=Number(importo)||0;
-    if(importo<=0)return;
+    if(importo<=0){gvWinOperationFailed();return;}
     if(await gvRegistra('RISCOSSIONE',nome,importo,'Riscossione vincita')){suonoPagamento();showToast('Riscossione confermata');closeTileDetailsAfterSuccess(nome);}
   }
   async function dannoSchedaVincita(nome){
@@ -836,14 +886,8 @@
     var detailsBtn = e.target.closest('.tile-details-toggle');
     if(detailsBtn){
       var detailsTile = detailsBtn.closest('.tile');
-      var details = detailsTile && detailsTile.querySelector('.tile-expanded');
-      if(!details) return;
-      if(tileCloseTimers[detailsBtn.dataset.nome]){
-        clearTimeout(tileCloseTimers[detailsBtn.dataset.nome]);
-        delete tileCloseTimers[detailsBtn.dataset.nome];
-      }
-      details.hidden = false;
-      detailsBtn.setAttribute('aria-expanded', 'true');
+      if(!detailsTile)return;
+      gvWinOpen(detailsBtn.dataset.nome,detailsTile);
       return;
     }
     var sellBtn = e.target.closest('.tile-sell-btn');
