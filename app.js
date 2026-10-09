@@ -234,71 +234,38 @@
   function suonoVincita(){ playTone(660, 0.1, 0, "triangle"); playTone(990, 0.12, 0.1, "triangle"); playTone(1320, 0.14, 0.2, "triangle"); }
   function suonoPagamento(){ playTone(440, 0.16, 0, "square"); playTone(330, 0.18, 0.12, "square"); }
 
+  // V5: ogni movimento e confermato dal database prima di modificare lo stato visibile.
+  var gvMutationBusy=false;
+  async function gvRegistra(tipo,nome,importo,note){
+    if(gvMutationBusy || !syncReady){showToast('Attendi il cloud');return false;}
+    gvMutationBusy=true;
+    try{
+      var args={p_sede:sedeId(),p_id:uid()+uid(),p_tipo:tipo,p_gioco:nome||'',p_importo:importo||0,p_note:note||''};
+      var r=await sbClient.rpc('gv_registra_movimento',args);
+      if(r.error)throw r.error;
+      await sbPull();
+      return true;
+    }catch(e){showToast('Operazione NON registrata: '+cloudError(e));console.error(e);return false;}
+    finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
+  }
   async function vendiUnaScheda(nome){
-    var g = findGame(nome);
-    if(!g || g.giacenza <= 0) return;
-    g.giacenza -= 1;
-    var importo = g.prezzo;
-    state.operations.push({ id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "VENDITA", gioco: nome, quantita: 1, importo: importo, note: "" });
-    await saveGames();
-    await saveOperations();
-    renderTiles();
-    renderRiepilogo();
-    suonoVendita();
-    scheduleSbAutoSync();
-    showToast("Venduta 1 " + nome + " · " + fmtEUR(importo) + " €");
+    if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');}
   }
-
-  async function registraRiscossione(nome, importo){
-    importo = Number(importo) || 0;
-    if(importo <= 0) return;
-    state.operations.push({
-      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(),
-      tipo: "RISCOSSIONE", gioco: nome || "",
-      quantita: 0, importo: importo, importoVinto: importo,
-      schede: [], note: "Riscossione vincita"
-    });
-    await saveOperations();
-    renderRiepilogo();
-    suonoPagamento();
-    scheduleSbAutoSync();
-    showToast("Riscossa vincita " + (nome ? nome + " · " : "") + fmtEUR(importo) + " €");
+  async function registraRiscossione(nome,importo){
+    importo=Number(importo)||0;
+    if(importo<=0)return;
+    if(await gvRegistra('RISCOSSIONE',nome,importo,'Riscossione vincita')){suonoPagamento();showToast('Riscossione confermata');}
   }
-
   async function dannoSchedaVincita(nome){
-    var g = findGame(nome);
-    if(!g || g.giacenza <= 0) return;
-    g.giacenza -= 1;
-    var valore = g.prezzo;
-    state.operations.push({
-      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "VINCITA", gioco: nome,
-      quantita: 1, importo: 0, importoVinto: valore,
-      schede: [{ gioco: nome, quantita: 1, prezzo: g.prezzo }], note: "Biglietto vincente"
-    });
-    await saveGames();
-    await saveOperations();
-    renderTiles();
-    renderRiepilogo();
-    suonoVincita();
-    scheduleSbAutoSync();
-    showToast("Data 1 " + nome + " come vincita · " + fmtEUR(valore) + " €");
+    if(await gvRegistra('VINCITA',nome,0,'Biglietto vincente')){suonoVincita();showToast('Vincita confermata');}
   }
-
   async function pagaContantiVincita(){
-    var input = document.getElementById('quickContantiInput');
-    if(!input) return;
-    var importo = Number(input.value) || 0;
-    if(importo <= 0){ showToast("Inserisci un importo valido"); return; }
-    state.operations.push({
-      id: uid(), data: todayISO(), ora: nowOra(), ts: Date.now(), tipo: "RISCOSSIONE", gioco: "",
-      quantita: 0, importo: importo, importoVinto: importo, schede: [], note: "Riscossione vincita"
-    });
-    await saveOperations();
-    input.value = "";
-    renderRiepilogo();
-    suonoPagamento();
-    scheduleSbAutoSync();
-    showToast("Pagati " + fmtEUR(importo) + " € in contanti");
+    var input=document.getElementById('quickContantiInput');if(!input)return;
+    var amount=Number(input.value)||0;
+    if(amount<=0){showToast('Inserisci un importo valido');return;}
+    if(await gvRegistra('RISCOSSIONE','',amount,'Riscossione vincita')){
+      input.value='';suonoPagamento();showToast('Pagamento confermato');
+    }
   }
 
   // ---------- Chiusura giornaliera ----------
@@ -435,6 +402,7 @@
   }
 
   async function applyImportedBackup(data){
+    throw new Error("Importazione diretta disabilitata in V5: richiede procedura amministrativa con verifica dati");
     if(!data || !Array.isArray(data.games)) throw new Error("formato non valido");
     state.games = data.games;
     if(data.fondoIniziale != null) state.fondoIniziale = Number(data.fondoIniziale);
@@ -478,33 +446,30 @@
     return result;
   }
   async function sbPush(silenzioso){
-    if(!syncReady){ if(!silenzioso) showToast('Prima carica i dati della sede dal cloud'); return; }
-    if(syncBusy){ syncDirty=true; return; }
-    syncBusy=true;
-    try{
-      var sid=sedeId();
-      var gs=state.games.map(function(g,i){ return {sede_id:sid,nome:g.nome,prezzo:g.prezzo,giacenza:g.giacenza,colore:g.color||null,immagine:g.immagine||null,ordine:i}; });
-      var os=state.operations.map(function(o){return {sede_id:sid,id:o.id,data:o.data,ora:o.ora||null,ts:o.ts||null,tipo:o.tipo,gioco:o.gioco||null,quantita:o.quantita||0,importo:o.importo||0,importo_vinto:o.importoVinto==null?null:o.importoVinto,schede:o.schede||[],note:o.note||null};});
-      var ss=[{sede_id:sid,key:'fondo_iniziale',value:String(state.fondoIniziale)},{sede_id:sid,key:'valore_magazzino_iniziale',value:String(state.valoreMagazzinoIniziale)}];
-      var as=[];
-      Object.keys(archivio).forEach(function(d){TURNI.forEach(function(t){var a=archivio[d][t];if(a)as.push({sede_id:sid,data:d,turno:t,pezzi:a.pezzi||0,incasso_vendite:a.incassoVendite||0,pagamenti:a.pagamenti||0,cassa_netta:a.cassaNettaGiorno||0,num_operazioni:a.numOperazioni||0});});});
-      // UPSERT, mai cancellazione globale delle operazioni o di altre sedi.
-      for(var batch=0;batch<gs.length;batch+=50){var g=await sbClient.from('gv_games').upsert(gs.slice(batch,batch+50),{onConflict:'sede_id,nome'});if(g.error)throw g.error;}
-      for(var i=0;i<os.length;i+=100){var o=await sbClient.from('gv_operations').upsert(os.slice(i,i+100),{onConflict:'sede_id,id'});if(o.error)throw o.error;}
-      var s=await sbClient.from('gv_settings').upsert(ss,{onConflict:'sede_id,key'});if(s.error)throw s.error;
-      for(var j=0;j<as.length;j+=100){var a=await sbClient.from('gv_archivio').upsert(as.slice(j,j+100),{onConflict:'sede_id,data,turno'});if(a.error)throw a.error;}
-      document.getElementById('sbLastSync').textContent='Salvato su cloud · '+new Date().toLocaleString('it-IT');
-      if(!silenzioso)showToast('Sincronizzazione sede completata');
-    }catch(e){console.error('Cloud sync:',e);document.getElementById('sbLastSync').textContent='Errore sincronizzazione: '+cloudError(e);if(!silenzioso)showToast('Errore cloud: '+cloudError(e));}
-    finally{syncBusy=false;if(syncDirty){syncDirty=false;scheduleSbAutoSync();}}
+    if(!silenzioso)showToast('V5: caricamento completo disabilitato per proteggere i dati. Contattare Admin.');
   }
-  function scheduleSbAutoSync(){
-    if(!syncReady) return;
-    clearTimeout(sbAutoSyncTimer);
-    sbAutoSyncTimer=setTimeout(function(){sbPush(true);},1000);
+  function scheduleSbAutoSync(){ /* V5: mai inviare snapshot locali delle giacenze */ }
+  var gvRefreshing=false, gvRefreshPending=false;
+  async function gvRefresh(){
+    if(document.hidden)return;
+    if(gvMutationBusy||gvRefreshing){gvRefreshPending=true;return;}
+    gvRefreshing=true;
+    try{await sbPull();}
+    finally{
+      gvRefreshing=false;
+      if(gvRefreshPending&&!gvMutationBusy){gvRefreshPending=false;setTimeout(gvRefresh,100);}
+    }
   }
+  var gvRealtimeChannel=sbClient.channel('gv_sede_'+sedeId())
+    .on('postgres_changes',{event:'*',schema:'public',table:'gv_operations',filter:'sede_id=eq.'+sedeId()},function(){gvRefresh();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'gv_games',filter:'sede_id=eq.'+sedeId()},function(){gvRefresh();})
+    .subscribe();
+  setInterval(gvRefresh,15000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)gvRefresh();});
+
   async function sbPull(){
-    if(syncBusy){showToast('Attendi la sincronizzazione in corso');return;}
+    if(syncBusy){gvRefreshPending=true;return;}
+    syncBusy=true;
     try{
       var results=await Promise.all([readAll('gv_games'),readAll('gv_operations'),readAll('gv_settings'),readAll('gv_archivio')]);
       var g=results[0],o=results[1],s=results[2],a=results[3];
@@ -539,7 +504,8 @@
       syncReady=true;
       document.getElementById('sbLastSync').textContent='Caricato dal cloud · '+new Date().toLocaleString('it-IT');
       showToast('Dati sede caricati dal cloud');
-    }catch(e){console.error(e);document.getElementById('sbLastSync').textContent='Errore lettura cloud: '+cloudError(e);showToast('Errore cloud: '+cloudError(e));}
+    }catch(e){console.error(e);document.getElementById('sbLastSync').textContent='Errore lettura cloud: '+cloudError(e);showToast('Errore cloud: '+cloudError(e));syncReady=false;}
+    finally{syncBusy=false;}
   }
 
   function exportExcel(){
@@ -721,25 +687,20 @@
   }
 
   async function deleteOperation(id){
-    var op = state.operations.find(function(o){ return o.id === id; });
-    if(op && op.tipo === "VENDITA"){
-      var g = findGame(op.gioco);
-      if(g) g.giacenza += Number(op.quantita) || 0; // restore stock if a sale is deleted
-      await saveGames();
-    }
-    if(op && (op.tipo === "VINCITA" || op.tipo === "PAGAMENTO VINCITA") && op.schede && op.schede.length){
-      op.schede.forEach(function(s){
-        var gs = findGame(s.gioco);
-        if(gs) gs.giacenza += Number(s.quantita) || 0; // le schede date in cambio tornano in magazzino
-      });
-      await saveGames();
-    }
-    state.operations = state.operations.filter(function(o){ return o.id !== id; });
-    await saveOperations();
-    renderTiles();
-    renderRiepilogo();
-    scheduleSbAutoSync();
-    showToast("Operazione eliminata");
+    if(gvMutationBusy || !syncReady){showToast('Attendi il cloud');return;}
+    var op=state.operations.find(function(o){return o.id===id;});if(!op)return;
+    if(window.GV_AUTH.ruolo!=='admin'){showToast('Solo Admin puo annullare operazioni');return;}
+    var motivo=window.prompt('Motivo annullamento (almeno 5 caratteri)');
+    if(motivo===null)return;
+    if(motivo.trim().length<5){showToast('Motivo troppo breve');return;}
+    if(!window.confirm('Annullare questa operazione? Sara registrata nella traccia di audit.'))return;
+    gvMutationBusy=true;
+    try{
+      var r=await sbClient.rpc('gv_annulla_movimento',{p_sede:sedeId(),p_id:id,p_motivo:motivo.trim()});
+      if(r.error)throw r.error;
+      await sbPull();showToast('Operazione annullata con audit');
+    }catch(e){showToast('Annullamento non eseguito: '+cloudError(e));}
+    finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
 
   function showToast(msg){
@@ -823,6 +784,8 @@
   });
 
   async function addGame(){
+    showToast('V5: modifica catalogo sospesa finche non e disponibile una procedura cloud sicura');return;
+
     if(locked){ showToast('Sblocca la configurazione per aggiungere un gioco'); return; }
     var nome = window.prompt('Nome del nuovo Gratta e Vinci', '');
     if(nome === null) return;
@@ -848,6 +811,8 @@
   }
 
   async function removeGame(nome){
+    showToast('V5: modifica catalogo sospesa finche non e disponibile una procedura cloud sicura');return;
+
     if(locked){ showToast('Sblocca la configurazione per eliminare un Gratta e Vinci'); return; }
     var g = findGame(nome);
     if(!g) return;

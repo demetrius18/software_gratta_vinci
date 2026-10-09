@@ -1,0 +1,26 @@
+V5 - PACCHETTO DI COLLAUDO, NON INSTALLARE DIRETTAMENTE SULLE CASSE OPERATIVE
+
+OBIETTIVI
+Fase 1: RPC SQL atomiche per VENDITA, VINCITA, RISCOSSIONE, ANNULLAMENTO con audit.
+Fase 2: Realtime + polling di recupero ogni 15 secondi; nessun invio di snapshot di giacenza.
+Fase 3: chiusura giornaliera unica e rettifiche V4, con lock condiviso per sede.
+
+ORDINE OBBLIGATORIO
+1. Esportare un backup completo dei dati attuali da Supabase.
+2. Usare un progetto Supabase DI TEST oppure una copia dei dati; non lanciare direttamente sul database operativo.
+3. Se le tabelle chiusure non esistono, eseguire 01_chiusure_giornaliere.sql.
+4. Eseguire 02_transazioni_sicure.sql nel SQL Editor del progetto di test.
+5. Configurare gv-config.js per il progetto di test e pubblicare V5 su ramo di sviluppo.
+6. Verificare con due dispositivi: vendita simultanea con giacenza 1, vincita, pagamento, annullamento Admin, giornata chiusa, disconnessione e riconnessione.
+7. Non eseguire operazioni reali finche i test non sono superati.
+
+LIMITI DA RISOLVERE
+- Catalogo giochi e importazione backup sono sospesi in V5 per evitare sovrascritture non sicure.
+- Il riepilogo locale per turni rimane nell'interfaccia storica; la chiusura ufficiale e nella pagina Direzione.
+- Alcune altre operazioni storiche potrebbero usare flussi non migrati; verificarle e non usarle in produzione.
+- La pubblicazione Realtime non e abilitata automaticamente dal file SQL; il polling funziona anche senza.
+- Nessuna modifica e stata eseguita sul database online.
+- Non usare V4 e V5 insieme: V4 puo ancora tentare scritture legacy.
+
+BOLOGNA: inviare invito a hipposlot@gmail.com da Authentication > Users > Add user > Send invitation.
+Poi assegnare membership SOLO a Bologna in gv_utenti_sedi; non inviare password in chat.

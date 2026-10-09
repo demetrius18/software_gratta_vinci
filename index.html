@@ -665,13 +665,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 </div>
 <input accept="application/json" id="importFileInput" style="display:none;" type="file"/>
 <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;">
-          I dati restano salvati in questo browser. Esporta un backup di tanto in tanto, e usa "Importa" per ripristinarlo su questo o un altro dispositivo.
+          Il database cloud è la fonte ufficiale dei dati. Esporta periodicamente un backup; il ripristino diretto è sospeso in modalità multisede.
         </p>
 </div>
 
 <div class="panel" id="sbPanel">
 <p id="gvSedeLabel" style="font-weight:700"></p>
-<a href="admin.html">Pannello direzione</a> · <a href="login.html">Cambia sede / account</a>
+<a href="admin.html" id="gvDirezioneLink" hidden>Pannello direzione</a> <span id="gvDirezioneSeparator" hidden>·</span> <a href="login.html">Cambia sede / account</a>
 <h2>Sincronizzazione cloud · sede selezionata</h2>
 <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 12px;">
           Salva i dati in un vero database in cloud (Supabase), così puoi usare il gestionale da più dispositivi e recuperare tutto se perdi questo. Serve un progetto Supabase gratuito con le tabelle create (vedi lo schema fornito a parte).

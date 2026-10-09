@@ -18,6 +18,8 @@ try{
  const {data:sede,error:se}=await client.from('gv_sedi').select('*').eq('id',allowed.sede_id).single();
  if(se)throw se;
  window.GV_AUTH={client,user,sede,ruolo:allowed.ruolo};
+ const admin=String(allowed.ruolo).toLowerCase()==="admin";
+ for(const id of ["gvDirezioneLink","gvDirezioneSeparator"]){const el=document.getElementById(id);if(el)el.hidden=!admin;}
  const label=document.getElementById('gvSedeLabel');if(label)label.textContent='Sede: '+(sede.nome||sede.name||sede.id);
  const script=document.createElement('script');script.src='app.js';script.onload=()=>status.remove();script.onerror=()=>{status.textContent='Impossibile caricare app.js';};document.body.appendChild(script);
 }catch(e){status.textContent='Accesso non riuscito: '+(e.message||e);}

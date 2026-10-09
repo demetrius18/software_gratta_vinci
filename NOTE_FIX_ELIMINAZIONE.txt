@@ -1,0 +1,9 @@
+V4 - correzione eliminazione operazioni
+
+1. Caricare tutti i file su ramo di sviluppo GitHub (oppure sostituire solo app.js se V4 è già pubblicata).
+2. Ricaricare entrambi i dispositivi con Ctrl+F5.
+3. Provare una vendita di TEST in giornata aperta, eliminarla e verificare il registro cloud sull'altro dispositivo dopo Carica da Supabase.
+4. Le operazioni di giornate chiuse non sono eliminabili: usare rettifiche tracciate.
+5. L'eliminazione è eseguita sul cloud PRIMA di modificare il registro locale. Non è ancora atomica con il ripristino giacenza: evitare operazioni simultanee finché non è pronta una RPC transazionale.
+6. Gli upsert delle operazioni esistenti ora ignorano i duplicati per ridurre la possibilità di ripristino accidentale da copie locali non aggiornate.
+7. Non richiede migrazioni SQL aggiuntive rispetto alla V4.
