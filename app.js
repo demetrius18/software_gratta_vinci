@@ -349,15 +349,55 @@
     gvWinPending=false;
     gvWinStopTimer(); // In caso di errore lascia aperto per leggere e verificare lo storico.
   }
-  var venditaConfermaInCorso=false;
+  var venditaConfermaInCorso=false, venditaDialog=null;
+  function confermaVendita(nome,prezzo){
+    return new Promise(function(resolve){
+      if(!venditaDialog){
+        venditaDialog=document.createElement('div');
+        venditaDialog.className='gv-win-overlay gv-sale-overlay';
+        venditaDialog.id='gvSaleConfirm';
+        venditaDialog.hidden=true;
+        venditaDialog.innerHTML='<div class="gv-win-dialog gv-sale-dialog" role="dialog" aria-modal="true" aria-labelledby="gvSaleTitle" aria-describedby="gvSaleText"><div class="gv-win-head"><div><div class="gv-win-kicker">OPERAZIONE DI VENDITA</div><h2 id="gvSaleTitle">Conferma vendita</h2></div><button type="button" class="gv-win-close gv-sale-close" aria-label="Annulla vendita">×</button></div><p id="gvSaleText" class="gv-sale-text"></p><p class="gv-sale-question">Vuoi procedere?</p><div class="gv-sale-actions"><button type="button" class="gv-sale-cancel">ANNULLA</button><button type="button" class="gv-sale-accept">CONFERMA</button></div></div>';
+        document.body.appendChild(venditaDialog);
+      }
+      var prevFocus=document.activeElement;
+      var finished=false;
+      function finish(confirmed){
+        if(finished)return;
+        finished=true;
+        venditaDialog.hidden=true;
+        venditaDialog.removeEventListener('click',onClick);
+        document.removeEventListener('keydown',onKey);
+        if(prevFocus && prevFocus.isConnected && typeof prevFocus.focus==='function')prevFocus.focus();
+        resolve(confirmed);
+      }
+      function onClick(e){
+        if(e.target===venditaDialog || e.target.closest('.gv-sale-cancel,.gv-sale-close'))finish(false);
+        else if(e.target.closest('.gv-sale-accept'))finish(true);
+      }
+      function onKey(e){
+        if(e.key==='Escape'){e.preventDefault();finish(false);}
+        if(e.key==='Tab'){
+          var controls=Array.from(venditaDialog.querySelectorAll('button'));
+          var first=controls[0],last=controls[controls.length-1];
+          if(e.shiftKey && document.activeElement===first){e.preventDefault();last.focus();}
+          else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
+        }
+      }
+      venditaDialog.querySelector('#gvSaleText').textContent='Stai per registrare la vendita di 1 biglietto '+nome+' del valore di '+prezzo+' €.';
+      venditaDialog.hidden=false;
+      venditaDialog.addEventListener('click',onClick);
+      document.addEventListener('keydown',onKey);
+      venditaDialog.querySelector('.gv-sale-cancel').focus();
+    });
+  }
   async function vendiUnaScheda(nome){
     if(venditaConfermaInCorso || gvMutationBusy)return;
     var gioco=findGame(nome);
     if(!gioco)return;
-    var messaggio='Conferma vendita: 1 biglietto '+nome+' da '+fmtEUR(gioco.prezzo)+' €. Vuoi procedere?';
-    if(!window.confirm(messaggio))return;
     venditaConfermaInCorso=true;
     try{
+      if(!await confermaVendita(nome,fmtEUR(gioco.prezzo)))return;
       if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');closeTileDetailsAfterSuccess(nome);}
     }finally{venditaConfermaInCorso=false;}
   }
