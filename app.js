@@ -349,8 +349,17 @@
     gvWinPending=false;
     gvWinStopTimer(); // In caso di errore lascia aperto per leggere e verificare lo storico.
   }
+  var venditaConfermaInCorso=false;
   async function vendiUnaScheda(nome){
-    if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');closeTileDetailsAfterSuccess(nome);}
+    if(venditaConfermaInCorso || gvMutationBusy)return;
+    var gioco=findGame(nome);
+    if(!gioco)return;
+    var messaggio='Conferma vendita: 1 biglietto '+nome+' da '+fmtEUR(gioco.prezzo)+' €. Vuoi procedere?';
+    if(!window.confirm(messaggio))return;
+    venditaConfermaInCorso=true;
+    try{
+      if(await gvRegistra('VENDITA',nome,0,'')){suonoVendita();showToast('Vendita confermata dal cloud');closeTileDetailsAfterSuccess(nome);}
+    }finally{venditaConfermaInCorso=false;}
   }
   async function registraRiscossione(nome,importo){
     importo=Number(importo)||0;
