@@ -204,6 +204,7 @@
     });
   }
   function renderTiles(){
+    var b=document.getElementById('gvExternalOpenBtn');if(b&&!b.dataset.bound){b.dataset.bound='1';b.addEventListener('click',extOpen);}
     var sortSelect = document.getElementById('gameSortSelect');
     if(sortSelect) sortSelect.value = gameSort;
     var addBtn = document.getElementById('addGameBtn');
@@ -390,6 +391,34 @@
       venditaDialog.addEventListener('click',onClick);
       document.addEventListener('keydown',onKey);
       venditaDialog.querySelector('.gv-sale-cancel').focus();
+    });
+  }
+
+  var extBusy=false;
+  async function extOpen(){
+    if(extBusy||gvMutationBusy)return;
+    var amounts=[5,10,20,30,40,50,60,70,80,90,100,200];
+    var overlay=document.createElement('div');overlay.className='gv-win-overlay';
+    overlay.innerHTML='<div class="gv-win-dialog" role="dialog" aria-modal="true"><div class="gv-win-head"><div><div class="gv-win-kicker">SOLO RISCOSSIONE</div><h2>Gratta e Vinci ESTERNE</h2></div><button class="gv-win-close" type="button">×</button></div><p>Seleziona l’importo da pagare</p><div class="payout-grid"></div><button class="other-payout-btn" type="button">ALTRO IMPORTO</button><div class="gv-sale-text"><span class="gv-sale-label">TOTALE DA PAGARE</span><strong class="gv-sale-price">—</strong></div><p class="gv-sale-question" hidden>Confermi il pagamento? Magazzino invariato.</p><div class="gv-sale-actions"><button class="gv-sale-cancel" type="button">ANNULLA</button><button class="gv-sale-accept" type="button" disabled>CONTINUA</button></div></div>';
+    document.body.appendChild(overlay);
+    var amount=0,confirming=false;
+    var grid=overlay.querySelector('.payout-grid');
+    grid.innerHTML=amounts.map(function(n){return '<button type="button" class="payout-btn" data-amount="'+n+'">'+n+' €</button>';}).join('');
+    function close(){if(!extBusy)overlay.remove();}
+    function update(){overlay.querySelector('.gv-sale-price').textContent=amount>0?fmtEUR(amount)+' €':'—';overlay.querySelector('.gv-sale-accept').disabled=!(amount>0&&amount<=1000000&&Math.abs(amount*100-Math.round(amount*100))<0.00001);}
+    overlay.addEventListener('click',async function(e){
+      if(extBusy)return;
+      if(e.target===overlay||e.target.closest('.gv-win-close')){close();return;}
+      var btn=e.target.closest('.payout-btn');
+      if(btn){amount=Number(btn.dataset.amount);update();return;}
+      if(e.target.closest('.other-payout-btn')){var val=window.prompt('Importo riscossione esterna (€)');if(val!==null){amount=Number(val.replace(',','.'));update();}return;}
+      if(e.target.closest('.gv-sale-cancel')){if(confirming){confirming=false;overlay.querySelector('.gv-sale-question').hidden=true;overlay.querySelector('.gv-sale-accept').textContent='CONTINUA';}else close();return;}
+      if(e.target.closest('.gv-sale-accept')){
+        if(!confirming){confirming=true;overlay.querySelector('.gv-sale-question').hidden=false;overlay.querySelector('.gv-sale-accept').textContent='CONFERMA';return;}
+        extBusy=true;overlay.querySelector('.gv-sale-accept').disabled=true;
+        var ok=await gvRegistra('RISCOSSIONE','GRATTA E VINCI ESTERNE',amount,'Riscossione esterna');
+        extBusy=false;if(ok){suonoPagamento();showToast('Riscossione esterna confermata');close();}else update();
+      }
     });
   }
   async function vendiUnaScheda(nome){
@@ -770,7 +799,7 @@
       amountClass = "neutral"; sign = "";
       amountValue = 0;
     } else {
-      tagClass = "vincita-contanti"; tagLabel = "Riscossione";
+      tagClass = "vincita-contanti"; tagLabel = op.gioco === "GRATTA E VINCI ESTERNE" ? "Riscossione ESTERNA" : "Riscossione";
       desc = op.gioco ? ("gioco: " + op.gioco) : "";
       amountClass = "neg"; sign = "−"; amountValue = op.importo;
     }
