@@ -357,7 +357,7 @@
         venditaDialog.className='gv-win-overlay gv-sale-overlay';
         venditaDialog.id='gvSaleConfirm';
         venditaDialog.hidden=true;
-        venditaDialog.innerHTML='<div class="gv-win-dialog gv-sale-dialog" role="dialog" aria-modal="true" aria-labelledby="gvSaleTitle" aria-describedby="gvSaleText"><div class="gv-win-head"><div><div class="gv-win-kicker">OPERAZIONE DI VENDITA</div><h2 id="gvSaleTitle">Conferma vendita</h2></div><button type="button" class="gv-win-close gv-sale-close" aria-label="Annulla vendita">×</button></div><p id="gvSaleText" class="gv-sale-text"></p><p class="gv-sale-question">Vuoi procedere?</p><div class="gv-sale-actions"><button type="button" class="gv-sale-cancel">ANNULLA</button><button type="button" class="gv-sale-accept">CONFERMA</button></div></div>';
+        venditaDialog.innerHTML='<div class="gv-win-dialog gv-sale-dialog" role="dialog" aria-modal="true" aria-labelledby="gvSaleTitle" aria-describedby="gvSaleText"><div class="gv-win-head"><div><div class="gv-win-kicker">OPERAZIONE DI VENDITA</div><h2 id="gvSaleTitle">Conferma vendita</h2></div><button type="button" class="gv-win-close gv-sale-close" aria-label="Annulla vendita">×</button></div><div id="gvSaleText" class="gv-sale-text"><span class="gv-sale-label">GRATTA E VINCI SELEZIONATO</span><strong class="gv-sale-game"></strong><span class="gv-sale-price-label">PREZZO DEL BIGLIETTO</span><strong class="gv-sale-price"></strong></div><p class="gv-sale-question">Confermi la vendita di 1 biglietto?</p><div class="gv-sale-actions"><button type="button" class="gv-sale-cancel">ANNULLA</button><button type="button" class="gv-sale-accept">CONFERMA</button></div></div>';
         document.body.appendChild(venditaDialog);
       }
       var prevFocus=document.activeElement;
@@ -384,7 +384,8 @@
           else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
         }
       }
-      venditaDialog.querySelector('#gvSaleText').textContent='Stai per registrare la vendita di 1 biglietto '+nome+' del valore di '+prezzo+' €.';
+      venditaDialog.querySelector('.gv-sale-game').textContent=nome;
+      venditaDialog.querySelector('.gv-sale-price').textContent=prezzo+' €';
       venditaDialog.hidden=false;
       venditaDialog.addEventListener('click',onClick);
       document.addEventListener('keydown',onKey);
