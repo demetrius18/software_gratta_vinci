@@ -230,6 +230,7 @@
   .gv-win-content .payout-btn{border-radius:999px;min-height:44px;font-size:15px;}
   .gv-win-content .other-payout-btn{border-radius:999px;min-height:46px;margin-top:12px;font-size:13px;}
   .gv-win-hint{font-size:11px;text-align:center;color:#77817b;margin-top:10px;}
+  .gv-external-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;margin:12px 0;background:#f3f8f1;border:2px solid #174f1c;border-radius:16px;color:#174f1c;flex-wrap:wrap}.gv-external-card strong{display:block;font-size:18px}.gv-external-card small{display:block;margin-top:4px;color:#536b57}.gv-external-card button{border:0;border-radius:999px;background:#174f1c;color:white;font-weight:900;padding:14px 24px;cursor:pointer}
   .gv-sale-dialog{width:min(100%,410px);}
   .gv-sale-text{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;background:linear-gradient(145deg,#f3f8f1,#fffaf0);border:1px solid #dbe5d7;border-radius:16px;padding:19px 14px;margin:20px 0 18px;}
   .gv-sale-label,.gv-sale-price-label{font-size:10px;font-weight:900;letter-spacing:.12em;color:#66796b;}
@@ -609,7 +610,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <button class="add-game-btn" id="addGameBtn" title="Aggiungi nuovo Gratta e Vinci" type="button">+</button>
 </div>
 </div>
-<div class="tiles-grid" id="tilesGrid"></div>
+<div class="gv-external-card"><div><strong>GRATTA E VINCI ESTERNE</strong><small>Solo riscossione · Magazzino invariato</small></div><button type="button" id="gvExternalOpenBtn">RISCOSSIONE</button></div><div class="tiles-grid" id="tilesGrid"></div>
 <input accept="image/*" id="tileImageInput" style="display:none;" type="file"/>
 </div>
 <div class="cassa-side">
