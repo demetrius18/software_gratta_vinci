@@ -641,11 +641,21 @@
       if(gvRefreshPending&&!gvMutationBusy){gvRefreshPending=false;setTimeout(gvRefresh,100);}
     }
   }
+  // Riduce letture cloud duplicate causate da eventi Realtime ravvicinati.
+  var gvRealtimeRefreshTimer=null;
+  function gvRealtimeRefresh(){
+    if(document.hidden)return;
+    if(gvRealtimeRefreshTimer)clearTimeout(gvRealtimeRefreshTimer);
+    gvRealtimeRefreshTimer=setTimeout(function(){
+      gvRealtimeRefreshTimer=null;
+      gvRefresh();
+    },1200);
+  }
   var gvRealtimeChannel=sbClient.channel('gv_sede_'+sedeId())
-    .on('postgres_changes',{event:'*',schema:'public',table:'gv_operations',filter:'sede_id=eq.'+sedeId()},function(){gvRefresh();})
-    .on('postgres_changes',{event:'*',schema:'public',table:'gv_games',filter:'sede_id=eq.'+sedeId()},function(){gvRefresh();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'gv_operations',filter:'sede_id=eq.'+sedeId()},gvRealtimeRefresh)
+    .on('postgres_changes',{event:'*',schema:'public',table:'gv_games',filter:'sede_id=eq.'+sedeId()},gvRealtimeRefresh)
     .subscribe();
-  setInterval(gvRefresh,15000);
+  setInterval(gvRefresh,60000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)gvRefresh();});
 
   async function sbPull(){
