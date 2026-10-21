@@ -808,6 +808,10 @@
         : (op.gioco || "Biglietto vincente");
       amountClass = "neutral"; sign = "";
       amountValue = 0;
+    } else if(op.tipo === "CARICO"){
+      tagClass = "vincita-scheda"; tagLabel = "Carico magazzino";
+      desc = "+" + op.quantita + " biglietti · " + op.gioco;
+      amountClass = "neutral"; sign = ""; amountValue = 0;
     } else {
       tagClass = "vincita-contanti"; tagLabel = op.gioco === "GRATTA E VINCI ESTERNE" ? "Riscossione ESTERNA" : "Riscossione";
       desc = op.gioco ? ("gioco: " + op.gioco) : "";
@@ -1108,6 +1112,44 @@
       showToast("Valore ordine magazzino aggiornato");
     }
   });
+
+  // Carico quantità: operazione atomica cloud, riservata all'amministratore.
+  (function installaCaricoMagazzino(){
+    var body=document.getElementById('magazzinoBody');
+    if(!body)return;
+    var btn=document.createElement('button');
+    btn.type='button';btn.textContent='+ NUOVO ORDINE / CARICO MAGAZZINO';
+    btn.style.cssText='display:block;margin:12px 0;padding:12px 18px;background:#173e64;color:white;border:0;border-radius:9px;font-weight:700;cursor:pointer';
+    body.closest('table').parentNode.insertBefore(btn,body.closest('table'));
+    btn.addEventListener('click',async function(){
+      if(window.GV_AUTH.ruolo!=='admin'){showToast('Carico riservato Admin');return;}
+      if(gvMutationBusy||!syncReady){showToast('Attendi la connessione cloud');return;}
+      var giochi=state.games.map(function(g){return g.nome;});
+      if(!giochi.length){showToast('Nessun gioco presente');return;}
+      var nome=window.prompt('Gioco da caricare (scrivi il nome esatto):\\n\\n'+giochi.join('\\n'),giochi[0]);
+      if(nome===null)return;
+      nome=nome.trim();var g=findGame(nome);
+      if(!g){showToast('Gioco non trovato: seleziona un nome esatto');return;}
+      var qStr=window.prompt('Quanti biglietti ricevuti per '+nome+'?','');
+      if(qStr===null)return;
+      if(!/^\\d+$/.test(qStr.trim())){showToast('Inserisci una quantità intera positiva');return;}
+      var q=Number(qStr.trim());
+      if(!Number.isSafeInteger(q)||q<1||q>100000){showToast('Quantità non valida (1–100000)');return;}
+      if(!window.confirm('CONFERMA CARICO\\nSede: '+(window.GV_AUTH.sede_nome||'sede corrente')+'\\nGioco: '+nome+'\\nGiacenza attuale: '+g.giacenza+'\\nBiglietti ricevuti: +'+q+'\\nNuova giacenza prevista: '+(g.giacenza+q)+'\\n\\nNessuna vendita o vincita verrà registrata.'))return;
+      gvMutationBusy=true;btn.disabled=true;
+      var args={p_sede:sedeId(),p_id:uid()+uid(),p_gioco:nome,p_quantita:q};
+      try{
+        await gvSessioneValida(false);
+        var res=await sbClient.rpc('gv_carica_magazzino',args);
+        if(res.error&&gvErroreAutenticazione(res.error)){await gvSessioneValida(true);res=await sbClient.rpc('gv_carica_magazzino',args);}
+        if(res.error)throw res.error;
+        await sbPull();showToast('Carico confermato: +'+q+' biglietti');
+      }catch(err){
+        showToast('Carico NON confermato: '+cloudError(err));
+        gvHelpDialog('Carico NON confermato','Verifica nello storico prima di ripetere il carico: potrebbe essere già stato salvato.',true,'Gioco: '+nome+' | Quantità: '+q+' | ID: '+args.p_id);
+      }finally{gvMutationBusy=false;btn.disabled=false;if(gvRefreshPending)gvRefresh();}
+    });
+  })();
 
   document.getElementById('magazzinoBody').addEventListener('click', function(e){
     var btn = e.target.closest('.mg-delete-game');
