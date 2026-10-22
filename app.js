@@ -1136,13 +1136,19 @@
     function collect(){
       var items=[];var invalid=false;
       rows.querySelectorAll('input[data-gioco]').forEach(function(input){
-        var raw=input.value.trim();var q=Number(raw);
-        if(!/^\\d+$/.test(raw)||!Number.isSafeInteger(q)||q<0||q>100000){invalid=true;return;}
+        // Un campo vuoto vale zero e non blocca gli altri giochi.
+        var raw=input.value.trim();
+        if(raw==='')raw='0';
+        var q=Number(raw);
+        var valid=/^\d+$/.test(raw)&&Number.isSafeInteger(q)&&q>=0&&q<=100000&&input.validity.valid;
+        input.style.borderColor=valid?'#aaa':'#b42318';
+        input.setAttribute('aria-invalid',valid?'false':'true');
+        if(!valid){invalid=input.dataset.gioco;return;}
         if(q>0)items.push({nome:input.dataset.gioco,quantita:q});
       });
       return {items:items,invalid:invalid};
     }
-    function updateTotal(){var c=collect();total.textContent=c.invalid?'Controlla le quantità inserite':('Totale da caricare: '+c.items.reduce(function(n,x){return n+x.quantita;},0)+' biglietti in '+c.items.length+' giochi');}
+    function updateTotal(){var c=collect();total.textContent=c.invalid?('Quantità non valida per: '+c.invalid+' (usa numeri interi da 0 a 100000)'):('Totale da caricare: '+c.items.reduce(function(n,x){return n+x.quantita;},0)+' biglietti in '+c.items.length+' giochi');}
     btn.addEventListener('click',function(){
       if(window.GV_AUTH.ruolo!=='admin'){showToast('Carico riservato Admin');return;}
       if(gvMutationBusy||!syncReady){showToast('Attendi la connessione cloud');return;}
@@ -1158,7 +1164,7 @@
     });
     confirmBtn.addEventListener('click',async function(){
       if(gvMutationBusy||!syncReady)return;
-      var c=collect();if(c.invalid){showToast('Correggi le quantità');return;}
+      var c=collect();if(c.invalid){showToast('Correggi la quantità di '+c.invalid);return;}
       if(!c.items.length){showToast('Inserisci almeno una quantità positiva');return;}
       var summary=c.items.map(function(x){return x.nome+': +'+x.quantita;}).join('\\n');
       if(!window.confirm('CONFERMA CARICO — '+(window.GV_AUTH.sede_nome||'sede corrente')+'\\n\\n'+summary+'\\n\\nNon saranno registrate vendite o vincite.'))return;
