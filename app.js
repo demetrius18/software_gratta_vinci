@@ -67,7 +67,7 @@
     try{ var g = storageGet('gv_games'); if(g && g.value) state.games = JSON.parse(g.value); }catch(e){}
     try{ var f = storageGet('gv_fondo_iniziale'); if(f && f.value) state.fondoIniziale = Number(f.value); }catch(e){}
     try{ var vm = storageGet('gv_valore_magazzino_iniziale'); if(vm && vm.value) state.valoreMagazzinoIniziale = Number(vm.value); }catch(e){}
-    try{ var so = storageGet('gv_game_sort'); if(so && so.value && ['price_desc','price_asc','custom'].indexOf(so.value) >= 0) gameSort = so.value; }catch(e){}
+    try{ var so = storageGet('gv_game_sort'); if(so && so.value && ['price_desc','price_asc','custom','available_first'].indexOf(so.value) >= 0) gameSort = so.value; }catch(e){}
     if(state.valoreMagazzinoIniziale === null){
       state.valoreMagazzinoIniziale = state.games.reduce(function(sum, g){ return sum + g.giacenza * g.prezzo; }, 0);
     }
@@ -82,6 +82,7 @@
     var list = state.games.slice();
     if(gameSort === 'price_desc') list.sort(function(a,b){ return Number(b.prezzo||0) - Number(a.prezzo||0); });
     else if(gameSort === 'price_asc') list.sort(function(a,b){ return Number(a.prezzo||0) - Number(b.prezzo||0); });
+    else if(gameSort === 'available_first') list.sort(function(a,b){ var az=Number(a.giacenza||0)<=0, bz=Number(b.giacenza||0)<=0; return Number(az)-Number(bz) || Number(b.prezzo||0)-Number(a.prezzo||0); });
     return list;
   }
 
@@ -1084,7 +1085,7 @@
     gameSort = e.target.value;
     await saveGameSort();
     renderTiles();
-    showToast(gameSort === 'price_desc' ? 'Ordine: dal più grande al più piccolo' : gameSort === 'price_asc' ? 'Ordine: dal più piccolo al più grande' : 'Ordine personalizzato');
+    showToast(gameSort === 'price_desc' ? 'Ordine: dal più grande al più piccolo' : gameSort === 'price_asc' ? 'Ordine: dal più piccolo al più grande' : gameSort === 'available_first' ? 'Ordine: esauriti in basso' : 'Ordine personalizzato');
   });
 
   document.getElementById('opsList').addEventListener('click', function(e){
