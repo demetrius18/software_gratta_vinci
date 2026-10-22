@@ -1046,32 +1046,37 @@
   }
   
   async function removeGame(nome){
-    showToast('V5: modifica catalogo sospesa finche non e disponibile una procedura cloud sicura');return;
-
-    if(locked){ showToast('Sblocca la configurazione per eliminare un Gratta e Vinci'); return; }
-    var g = findGame(nome);
-    if(!g) return;
-    var hasOps = state.operations.some(function(op){
-      return op.gioco === nome || (op.schede && op.schede.some(function(s){ return s.gioco === nome; }));
-    });
-    var msg = 'Eliminare definitivamente "' + nome + '" dalla configurazione?';
-    if(hasOps) msg += '\n\nLo storico delle operazioni resterà salvato, ma il Gratta e Vinci non sarà più disponibile nel magazzino.';
-    if(!window.confirm(msg)) return;
-    state.games = state.games.filter(function(x){ return x.nome !== nome; });
-    await saveGames();
-    renderTiles();
-    renderRiepilogo();
-    scheduleSbAutoSync();
-    showToast('Gratta e Vinci eliminato dalla configurazione');
+    if(locked || window.GV_AUTH.ruolo!=='admin'){showToast('Eliminazione riservata Admin con configurazione sbloccata');return;}
+    if(gvMutationBusy||!syncReady){showToast('Attendi la sincronizzazione cloud');return;}
+    var g=findGame(nome);if(!g)return;
+    var hasOps=state.operations.some(function(op){return op.gioco===nome||(op.schede||[]).some(function(x){return x.gioco===nome;});});
+    var msg='Eliminare "'+nome+'" dal catalogo della sede corrente?\\n\\nLo storico delle operazioni rimarrà conservato.';
+    if(hasOps)msg+='\\n\\nATTENZIONE: esistono operazioni storiche associate a questo gioco.';
+    if(!window.confirm(msg))return;
+    gvMutationBusy=true;
+    try{
+      await gvSessioneValida(false);
+      var res=await sbClient.from('gv_games').delete().eq('sede_id',sedeId()).eq('nome',nome).select('nome');
+      if(res.error)throw res.error;
+      if(!res.data||res.data.length!==1)throw new Error('Eliminazione non verificata sul cloud');
+      await sbPull();showToast('Gioco eliminato dal catalogo cloud');
+    }catch(e){showToast('Eliminazione NON confermata: '+cloudError(e));}
+    finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
 
-  async function setGameImage(nome, dataUrlOrNull){
-    var g = findGame(nome);
-    if(!g) return;
-    g.immagine = dataUrlOrNull;
-    await saveGames();
-    renderTiles();
-    showToast(dataUrlOrNull ? "Immagine caricata" : "Immagine rimossa");
+  async function setGameImage(nome,dataUrlOrNull){
+    if(locked||window.GV_AUTH.ruolo!=='admin'){showToast('Immagini modificabili solo da Admin con configurazione sbloccata');return;}
+    if(gvMutationBusy||!syncReady){showToast('Attendi la sincronizzazione cloud');return;}
+    if(!findGame(nome))return;
+    gvMutationBusy=true;
+    try{
+      await gvSessioneValida(false);
+      var res=await sbClient.from('gv_games').update({immagine:dataUrlOrNull}).eq('sede_id',sedeId()).eq('nome',nome).select('nome');
+      if(res.error)throw res.error;
+      if(!res.data||res.data.length!==1)throw new Error('Immagine non confermata sul cloud');
+      await sbPull();showToast(dataUrlOrNull?'Immagine salvata nel cloud':'Immagine rimossa dal cloud');
+    }catch(e){showToast('Immagine NON salvata: '+cloudError(e));}
+    finally{gvMutationBusy=false;if(gvRefreshPending)gvRefresh();}
   }
   document.getElementById('addGameBtn').addEventListener('click', addGame);
   document.getElementById('gameSortSelect').addEventListener('change', async function(e){
@@ -1115,39 +1120,65 @@
 
   // Carico quantità: operazione atomica cloud, riservata all'amministratore.
   (function installaCaricoMagazzino(){
-    var body=document.getElementById('magazzinoBody');
-    if(!body)return;
+    var body=document.getElementById('magazzinoBody');if(!body)return;
     var btn=document.createElement('button');
     btn.type='button';btn.textContent='+ NUOVO ORDINE / CARICO MAGAZZINO';
     btn.style.cssText='display:block;margin:12px 0;padding:12px 18px;background:#173e64;color:white;border:0;border-radius:9px;font-weight:700;cursor:pointer';
     body.closest('table').parentNode.insertBefore(btn,body.closest('table'));
-    btn.addEventListener('click',async function(){
+    var overlay=document.createElement('div');
+    overlay.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;align-items:center;justify-content:center;padding:16px';
+    overlay.innerHTML='<div role="dialog" aria-modal="true" aria-label="Nuovo ordine" style="background:#fff;color:#172b43;border-radius:14px;padding:22px;max-width:680px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 12px 44px #0005"><h2 style="margin:0 0 8px">NUOVO ORDINE — CARICO MAGAZZINO</h2><p class="carico-sede" style="margin:0 0 12px"></p><p style="font-size:13px">Inserisci soltanto le quantità ricevute. Lascia 0 per i giochi non inclusi nell’ordine.</p><div class="carico-righe"></div><p class="carico-totale" style="font-weight:bold"></p><div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button type="button" class="carico-annulla" style="padding:10px 18px">ANNULLA</button><button type="button" class="carico-conferma" style="padding:10px 18px;background:#173e64;color:white;border:0;border-radius:8px">CONFERMA CARICO</button></div></div>';
+    document.body.appendChild(overlay);
+    var rows=overlay.querySelector('.carico-righe'),total=overlay.querySelector('.carico-totale'),confirmBtn=overlay.querySelector('.carico-conferma');
+    function close(){overlay.style.display='none';}
+    overlay.querySelector('.carico-annulla').addEventListener('click',close);
+    overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
+    function collect(){
+      var items=[];var invalid=false;
+      rows.querySelectorAll('input[data-gioco]').forEach(function(input){
+        var raw=input.value.trim();var q=Number(raw);
+        if(!/^\\d+$/.test(raw)||!Number.isSafeInteger(q)||q<0||q>100000){invalid=true;return;}
+        if(q>0)items.push({nome:input.dataset.gioco,quantita:q});
+      });
+      return {items:items,invalid:invalid};
+    }
+    function updateTotal(){var c=collect();total.textContent=c.invalid?'Controlla le quantità inserite':('Totale da caricare: '+c.items.reduce(function(n,x){return n+x.quantita;},0)+' biglietti in '+c.items.length+' giochi');}
+    btn.addEventListener('click',function(){
       if(window.GV_AUTH.ruolo!=='admin'){showToast('Carico riservato Admin');return;}
       if(gvMutationBusy||!syncReady){showToast('Attendi la connessione cloud');return;}
-      var giochi=state.games.map(function(g){return g.nome;});
-      if(!giochi.length){showToast('Nessun gioco presente');return;}
-      var nome=window.prompt('Gioco da caricare (scrivi il nome esatto):\\n\\n'+giochi.join('\\n'),giochi[0]);
-      if(nome===null)return;
-      nome=nome.trim();var g=findGame(nome);
-      if(!g){showToast('Gioco non trovato: seleziona un nome esatto');return;}
-      var qStr=window.prompt('Quanti biglietti ricevuti per '+nome+'?','');
-      if(qStr===null)return;
-      if(!/^\\d+$/.test(qStr.trim())){showToast('Inserisci una quantità intera positiva');return;}
-      var q=Number(qStr.trim());
-      if(!Number.isSafeInteger(q)||q<1||q>100000){showToast('Quantità non valida (1–100000)');return;}
-      if(!window.confirm('CONFERMA CARICO\\nSede: '+(window.GV_AUTH.sede_nome||'sede corrente')+'\\nGioco: '+nome+'\\nGiacenza attuale: '+g.giacenza+'\\nBiglietti ricevuti: +'+q+'\\nNuova giacenza prevista: '+(g.giacenza+q)+'\\n\\nNessuna vendita o vincita verrà registrata.'))return;
-      gvMutationBusy=true;btn.disabled=true;
-      var args={p_sede:sedeId(),p_id:uid()+uid(),p_gioco:nome,p_quantita:q};
+      rows.replaceChildren();
+      state.games.slice().sort(function(x,y){return x.nome.localeCompare(y.nome,'it');}).forEach(function(g){
+        var line=document.createElement('label');line.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:9px 0';
+        var title=document.createElement('span');title.textContent=g.nome+' · '+fmtEUR(g.prezzo)+' € · Disponibili: '+g.giacenza;
+        var input=document.createElement('input');input.type='number';input.min='0';input.max='100000';input.step='1';input.value='0';input.dataset.gioco=g.nome;input.style.cssText='width:95px;padding:8px;border:1px solid #aaa;border-radius:6px';input.addEventListener('input',updateTotal);
+        line.append(title,input);rows.appendChild(line);
+      });
+      overlay.querySelector('.carico-sede').textContent='Sede: '+(window.GV_AUTH.sede_nome||'corrente');
+      updateTotal();overlay.style.display='flex';
+    });
+    confirmBtn.addEventListener('click',async function(){
+      if(gvMutationBusy||!syncReady)return;
+      var c=collect();if(c.invalid){showToast('Correggi le quantità');return;}
+      if(!c.items.length){showToast('Inserisci almeno una quantità positiva');return;}
+      var summary=c.items.map(function(x){return x.nome+': +'+x.quantita;}).join('\\n');
+      if(!window.confirm('CONFERMA CARICO — '+(window.GV_AUTH.sede_nome||'sede corrente')+'\\n\\n'+summary+'\\n\\nNon saranno registrate vendite o vincite.'))return;
+      gvMutationBusy=true;confirmBtn.disabled=true;
+      var done=[],failed=null;
       try{
         await gvSessioneValida(false);
-        var res=await sbClient.rpc('gv_carica_magazzino',args);
-        if(res.error&&gvErroreAutenticazione(res.error)){await gvSessioneValida(true);res=await sbClient.rpc('gv_carica_magazzino',args);}
-        if(res.error)throw res.error;
-        await sbPull();showToast('Carico confermato: +'+q+' biglietti');
-      }catch(err){
-        showToast('Carico NON confermato: '+cloudError(err));
-        gvHelpDialog('Carico NON confermato','Verifica nello storico prima di ripetere il carico: potrebbe essere già stato salvato.',true,'Gioco: '+nome+' | Quantità: '+q+' | ID: '+args.p_id);
-      }finally{gvMutationBusy=false;btn.disabled=false;if(gvRefreshPending)gvRefresh();}
+        for(var i=0;i<c.items.length;i++){
+          var item=c.items[i],args={p_sede:sedeId(),p_id:uid()+uid(),p_gioco:item.nome,p_quantita:item.quantita};
+          var res=await sbClient.rpc('gv_carica_magazzino',args);
+          if(res.error&&gvErroreAutenticazione(res.error)){await gvSessioneValida(true);res=await sbClient.rpc('gv_carica_magazzino',args);}
+          if(res.error){failed={item:item,id:args.p_id,error:cloudError(res.error)};break;}
+          done.push(item);
+        }
+        await sbPull();
+        if(failed){
+          gvHelpDialog('Carico parzialmente confermato','Alcuni giochi potrebbero essere stati caricati. Verifica lo storico prima di riprovare. NON ripetere l’intero ordine.',true,'Confermati: '+done.map(function(x){return x.nome+' +'+x.quantita;}).join(', ')+' | Da verificare: '+failed.item.nome+' +'+failed.item.quantita+' | ID: '+failed.id+' | Errore: '+failed.error);
+        }else{close();showToast('Ordine registrato: '+done.length+' giochi');}
+      }catch(err){gvHelpDialog('Carico NON confermato','Controlla lo storico prima di riprovare: una parte dell’ordine potrebbe essere stata salvata.',true,cloudError(err));}
+      finally{gvMutationBusy=false;confirmBtn.disabled=false;if(gvRefreshPending)gvRefresh();}
     });
   })();
 
