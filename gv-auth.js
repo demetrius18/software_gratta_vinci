@@ -21,6 +21,6 @@ try{
  const admin=String(allowed.ruolo).toLowerCase()==="admin";
  for(const id of ["gvDirezioneLink","gvDirezioneSeparator"]){const el=document.getElementById(id);if(el)el.hidden=!admin;}
  const label=document.getElementById('gvSedeLabel');if(label)label.textContent='Sede: '+(sede.nome||sede.name||sede.id);
- const script=document.createElement('script');script.src='app.js?v=85f8a6e5';script.onload=()=>status.remove();script.onerror=()=>{status.textContent='Impossibile caricare app.js';};document.body.appendChild(script);
+ const script=document.createElement('script');script.src='app.js?v=b2903972';script.onload=()=>status.remove();script.onerror=()=>{status.textContent='Impossibile caricare app.js';};document.body.appendChild(script);
 }catch(e){status.textContent='Accesso non riuscito: '+(e.message||e);}
 })();
